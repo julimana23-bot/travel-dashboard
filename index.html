@@ -4,15 +4,32 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Travel Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.383.0/umd/lucide.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto',sans-serif;background:#18181b;color:#e4e4e7;min-height:100vh;padding:20px}
 .container{max-width:1600px;margin:0 auto}
-.sidebar{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:rgba(39,39,42,0.8);backdrop-filter:blur(10px);border-radius:16px;padding:10px 16px;display:flex;flex-direction:row;gap:8px;z-index:100}
-.sidebar-icon{width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:10px;transition:all .3s;font-size:20px}
-.sidebar-icon:hover{background:rgba(255,255,255,0.1)}
-.sidebar-icon.active{background:rgba(167,139,250,0.3);border:1px solid #a78bfa}
-.main-content{margin-left:0;margin-top:72px}
+.sidebar{position:fixed;left:0;top:0;height:100vh;width:220px;background:rgba(24,24,27,0.95);backdrop-filter:blur(10px);border-right:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:column;padding:24px 12px;gap:4px;z-index:100;transition:width .3s ease}
+.sidebar.collapsed{width:64px}
+.sidebar-logo{display:flex;align-items:center;gap:12px;padding:8px 8px 24px;margin-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.08)}
+.sidebar-logo-icon{font-size:24px;flex-shrink:0;width:32px;text-align:center}
+.sidebar-logo-text{font-size:1rem;font-weight:600;background:linear-gradient(135deg,#a78bfa,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;white-space:nowrap;overflow:hidden;transition:opacity .2s,width .3s;width:140px}
+.sidebar.collapsed .sidebar-logo-text{opacity:0;width:0}
+.sidebar-icon{width:100%;display:flex;align-items:center;gap:12px;cursor:pointer;border-radius:10px;transition:all .2s;font-size:18px;padding:10px 8px;color:#a1a1aa}
+.sidebar-icon:hover{background:rgba(255,255,255,0.08);color:#e4e4e7}
+.sidebar-icon.active{background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.3);color:#a78bfa}
+.sidebar-icon-emoji{width:24px;text-align:center;flex-shrink:0;font-size:18px}
+.sidebar-icon-label{font-size:.875rem;font-weight:500;white-space:nowrap;overflow:hidden;transition:opacity .2s,width .3s;width:140px}
+.sidebar.collapsed .sidebar-icon-label{opacity:0;width:0}
+.sidebar-toggle{margin-top:auto;display:flex;align-items:center;gap:12px;cursor:pointer;border-radius:10px;padding:10px 8px;color:#71717a;transition:all .2s}
+.sidebar-toggle:hover{background:rgba(255,255,255,0.08);color:#e4e4e7}
+.sidebar-toggle-icon{width:24px;height:24px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .3s}
+.sidebar-toggle-icon svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.75}
+.sidebar.collapsed .sidebar-toggle-icon{transform:rotate(180deg)}
+.sidebar-toggle-label{font-size:.875rem;white-space:nowrap;overflow:hidden;transition:opacity .2s,width .3s;width:140px}
+.sidebar.collapsed .sidebar-toggle-label{opacity:0;width:0}
+.main-content{margin-left:220px;transition:margin-left .3s ease}
+.main-content.collapsed{margin-left:64px}
 .tab-content{display:none}
 .tab-content.active{display:block}
 header h1{font-size:2rem;font-weight:600;margin-bottom:8px;background:linear-gradient(135deg,#a78bfa,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
@@ -90,11 +107,31 @@ header p{color:#a1a1aa;font-size:.95rem}
 </style>
 </head>
 <body>
-<div class="sidebar">
-  <div class="sidebar-icon active" data-tab="overview" title="Overview">🌍</div>
-  <div class="sidebar-icon" data-tab="stats" title="Statistics">📊</div>
-  <div class="sidebar-icon" data-tab="trips" title="Trips">✈️</div>
-  <div class="sidebar-icon" data-tab="bucket" title="Goals">🎯</div>
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <span class="sidebar-logo-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span>
+    <span class="sidebar-logo-text">Travel Dashboard</span>
+  </div>
+  <div class="sidebar-icon active" data-tab="overview">
+    <span class="sidebar-icon-emoji"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg></span>
+    <span class="sidebar-icon-label">Overview</span>
+  </div>
+  <div class="sidebar-icon" data-tab="stats">
+    <span class="sidebar-icon-emoji"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
+    <span class="sidebar-icon-label">Statistics</span>
+  </div>
+  <div class="sidebar-icon" data-tab="trips">
+    <span class="sidebar-icon-emoji"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21 4 19 4c-1 0-1.5.5-3.5 2.5L11 8 2.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L6 12l-2 3H1l-1 1 3 2 2 3 1-1v-3l3-2 3.5 3.3c.3.4.8.5 1.3.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg></span>
+    <span class="sidebar-icon-label">My Trips</span>
+  </div>
+  <div class="sidebar-icon" data-tab="bucket">
+    <span class="sidebar-icon-emoji"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>
+    <span class="sidebar-icon-label">Goals</span>
+  </div>
+  <div class="sidebar-toggle" id="sidebarToggle">
+    <span class="sidebar-toggle-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></span>
+    <span class="sidebar-toggle-label">Collapse</span>
+  </div>
 </div>
 
 <div class="container">
@@ -553,6 +590,14 @@ mapContainer?.addEventListener('wheel', e => {
   applyTransform();
 }, { passive: false });
 
+// ---- SIDEBAR TOGGLE ----
+const sidebar = document.getElementById('sidebar');
+const mainContent = document.querySelector('.main-content');
+document.getElementById('sidebarToggle').addEventListener('click', () => {
+  sidebar.classList.toggle('collapsed');
+  mainContent.classList.toggle('collapsed');
+});
+
 // ---- TABS ----
 document.querySelectorAll('.sidebar-icon').forEach(icon => {
   icon.addEventListener('click', () => {
@@ -577,6 +622,7 @@ document.querySelectorAll('.toggle-btn').forEach(btn => {
 
 // ---- INIT ----
 applyMode('all');
+lucide.createIcons();
 </script>
 </body>
 </html>
