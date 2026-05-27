@@ -103,7 +103,56 @@ header p{color:#a1a1aa;font-size:.95rem}
 .legend-dot{width:12px;height:12px;border-radius:50%;background:#a78bfa;flex-shrink:0}
 .achievement-card{background:linear-gradient(135deg,rgba(167,139,250,.2),rgba(236,72,153,.2));border:1px solid rgba(167,139,250,.2);border-radius:16px;padding:20px;transition:all .3s}
 .achievement-card:hover{transform:translateY(-2px);border-color:rgba(167,139,250,.4)}
-@media(max-width:768px){.sidebar{display:none}.main-content{margin-left:0}.trips-grid{grid-template-columns:1fr}}
+@media(max-width:768px){.sidebar{display:none}.main-content{margin-left:0;padding-bottom:80px}.trips-grid{grid-template-columns:1fr}}
+.mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(24,24,27,0.97);backdrop-filter:blur(12px);border-top:1px solid rgba(255,255,255,0.08);z-index:200;padding:8px 0 max(env(safe-area-inset-bottom),8px)}
+.mobile-nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:transparent;border:none;color:#52525b;cursor:pointer;padding:6px 4px;font-size:.68rem;font-weight:500;transition:color .2s;letter-spacing:.3px;text-transform:uppercase}
+.mobile-nav-btn svg{width:20px;height:20px;stroke:currentColor;stroke-width:1.75;fill:none}
+.mobile-nav-btn.active{color:#a78bfa}
+@media(max-width:768px){.mobile-nav{display:flex}}
+.region-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px}
+.region-btn{display:flex;align-items:center;gap:8px;padding:8px 16px;background:rgba(39,39,42,0.8);border:1px solid rgba(255,255,255,0.1);color:#a1a1aa;cursor:pointer;border-radius:10px;font-size:.875rem;font-weight:500;transition:all .2s}
+.region-btn:hover:not(.active){background:rgba(255,255,255,0.08);color:#e4e4e7;border-color:rgba(255,255,255,0.2)}
+.region-btn.active{background:linear-gradient(135deg,#a78bfa,#ec4899);border-color:transparent;color:#fff}
+.region-count{background:rgba(0,0,0,0.25);border-radius:20px;padding:1px 7px;font-size:.8rem;font-weight:600}
+.region-btn.active .region-count{background:rgba(0,0,0,0.2)}
+/* Region colors */
+:root{--color-america:#60a5fa;--color-europe:#fbbf24;--color-argentina:#67e8f9;--color-asia:#fb923c;--color-africa:#4ade80}
+.trip-card[data-region="america"]{border-left:3px solid var(--color-america)}
+.trip-card[data-region="europe"]{border-left:3px solid var(--color-europe)}
+.trip-card[data-region="argentina"]{border-left:3px solid var(--color-argentina)}
+.trip-card[data-region="asia"]{border-left:3px solid var(--color-asia)}
+.trip-card[data-region="africa"]{border-left:3px solid var(--color-africa)}
+.region-btn[data-region="america"]::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--color-america);margin-right:6px}
+.region-btn[data-region="europe"]::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--color-europe);margin-right:6px}
+.region-btn[data-region="argentina"]::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--color-argentina);margin-right:6px}
+.region-btn[data-region="asia"]::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--color-asia);margin-right:6px}
+.region-btn[data-region="africa"]::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--color-africa);margin-right:6px}
+/* View toggle */
+.view-toggle{display:flex;gap:4px;background:rgba(39,39,42,0.8);padding:4px;border-radius:10px}
+.view-btn{width:34px;height:34px;display:flex;align-items:center;justify-content:center;background:transparent;border:none;color:#a1a1aa;cursor:pointer;border-radius:7px;transition:all .2s}
+.view-btn:hover:not(.active){background:rgba(255,255,255,0.08);color:#e4e4e7}
+.view-btn.active{background:rgba(167,139,250,0.2);color:#a78bfa}
+.view-btn svg{width:16px;height:16px;stroke:currentColor;stroke-width:1.75;fill:none}
+/* List view */
+#tripsGrid.list-view{display:flex;flex-direction:column;gap:2px}
+#tripsGrid.list-view .trip-card{display:flex;align-items:center;gap:16px;padding:10px 20px;border-radius:8px;border-bottom:1px solid rgba(255,255,255,0.05)}
+#tripsGrid.list-view .trip-card:hover{transform:none}
+#tripsGrid.list-view .trip-header{display:flex;align-items:center;gap:12px;flex:1;margin-bottom:0;min-width:0}
+#tripsGrid.list-view .trip-flag{font-size:1.4rem;flex-shrink:0;line-height:1}
+#tripsGrid.list-view .trip-info{min-width:0;flex:1}
+#tripsGrid.list-view .trip-info h3{font-size:.92rem;font-weight:600;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#tripsGrid.list-view .trip-date{font-size:.78rem;color:#71717a;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#tripsGrid.list-view .trip-stats{display:flex;align-items:center;flex-shrink:0;margin:0;grid-template-columns:unset}
+#tripsGrid.list-view .trip-stat{background:transparent;padding:4px 16px;text-align:right;border-right:1px solid rgba(255,255,255,0.07);min-width:76px}
+#tripsGrid.list-view .trip-stat:last-child{border-right:none;padding-right:0}
+#tripsGrid.list-view .trip-stat-value{font-size:.9rem;color:#a78bfa;margin-bottom:2px}
+#tripsGrid.list-view .trip-stat-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.4px}
+#tripsGrid.list-view .trip-highlights{display:none}
+.list-header{display:flex;align-items:center;padding:6px 20px;font-size:.7rem;text-transform:uppercase;letter-spacing:.6px;color:#52525b;border-bottom:1px solid rgba(255,255,255,0.07);margin-bottom:2px}
+.list-header .lh-dest{flex:1}
+.list-header .lh-stats{display:flex;flex-shrink:0}
+.list-header .lh-stat{min-width:76px;padding:0 16px;text-align:right}
+.list-header .lh-stat:last-child{padding-right:0}
 </style>
 </head>
 <body>
@@ -268,105 +317,132 @@ header p{color:#a1a1aa;font-size:.95rem}
 
     <!-- TRIPS TAB -->
     <div class="tab-content" id="trips">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;flex-wrap:wrap;gap:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:16px">
         <div>
           <h1 class="section-title">✈️ My Trips</h1>
-          <p class="section-subtitle">Relive the adventures</p>
+          <p class="section-subtitle" style="margin-bottom:0">Relive the adventures</p>
         </div>
         <div class="trip-toggle">
           <button class="toggle-btn active" data-mode="all">All Trips</button>
           <button class="toggle-btn" data-mode="girlfriend">With Girlfriend</button>
         </div>
       </div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
+        <div class="region-filters" id="regionFilters" style="margin-bottom:0;flex:1">
+          <button class="region-btn active" data-region="all">All <span class="region-count" id="rc-all"></span></button>
+          <button class="region-btn" data-region="america">America <span class="region-count" id="rc-america"></span></button>
+          <button class="region-btn" data-region="europe">Europe <span class="region-count" id="rc-europe"></span></button>
+          <button class="region-btn" data-region="argentina">Argentina <span class="region-count" id="rc-argentina"></span></button>
+          <button class="region-btn" data-region="asia">Asia <span class="region-count" id="rc-asia"></span></button>
+          <button class="region-btn" data-region="africa">Africa <span class="region-count" id="rc-africa"></span></button>
+        </div>
+        <div class="view-toggle">
+          <button class="view-btn active" id="viewCards" title="Card view">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          </button>
+          <button class="view-btn" id="viewList" title="List view">
+            <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="list-header" id="listHeader" style="display:none">
+        <span class="lh-dest">Destination</span>
+        <div class="lh-stats">
+          <span class="lh-stat">Days</span>
+          <span class="lh-stat">Cities</span>
+          <span class="lh-stat">Distance</span>
+        </div>
+      </div>
       <div class="trips-grid" id="tripsGrid">
         <!-- GF trips -->
-        <div class="trip-card" data-mode="girlfriend">
+        <div class="trip-card" data-mode="girlfriend" data-region="africa">
           <div class="trip-header"><div class="trip-flag">🇿🇦</div><div class="trip-info"><h3>South Africa</h3><div class="trip-date">13–29 Jan, 2024 · With GF 💕</div></div></div>
           <div class="trip-stats"><div class="trip-stat"><div class="trip-stat-value">16</div><div class="trip-stat-label">Days</div></div><div class="trip-stat"><div class="trip-stat-value">5</div><div class="trip-stat-label">Cities</div></div><div class="trip-stat"><div class="trip-stat-value">2.3K</div><div class="trip-stat-label">km</div></div></div>
           <div class="trip-highlights"><div class="highlight-item"><span class="highlight-icon">🦁</span><span>Kariega Safari — 3 nights</span></div><div class="highlight-item"><span class="highlight-icon">🪂</span><span>Bloukrans Bridge bungee jump</span></div><div class="highlight-item"><span class="highlight-icon">🦈</span><span>Shark diving in Knysna</span></div></div>
         </div>
-        <div class="trip-card" data-mode="girlfriend">
+        <div class="trip-card" data-mode="girlfriend" data-region="asia">
           <div class="trip-header"><div class="trip-flag">🌏</div><div class="trip-info"><h3>Southeast Asia</h3><div class="trip-date">28 Dec 2024 – 20 Jan 2025 · With GF 💕</div></div></div>
           <div class="trip-stats"><div class="trip-stat"><div class="trip-stat-value">24</div><div class="trip-stat-label">Days</div></div><div class="trip-stat"><div class="trip-stat-value">10+</div><div class="trip-stat-label">Cities</div></div><div class="trip-stat"><div class="trip-stat-value">3</div><div class="trip-stat-label">Countries</div></div></div>
           <div class="trip-highlights"><div class="highlight-item"><span class="highlight-icon">🛕</span><span>Angkor Wat temples</span></div><div class="highlight-item"><span class="highlight-icon">🏝️</span><span>Ha Long Bay — Natural Wonder of the World</span></div><div class="highlight-item"><span class="highlight-icon">✨</span><span>Maya Bay & bioluminescent plankton</span></div></div>
         </div>
-        <div class="trip-card" data-mode="girlfriend">
+        <div class="trip-card" data-mode="girlfriend" data-region="america">
           <div class="trip-header"><div class="trip-flag">🇨🇴</div><div class="trip-info"><h3>Colombia</h3><div class="trip-date">13–21 Feb, 2026 · With GF 💕</div></div></div>
           <div class="trip-stats"><div class="trip-stat"><div class="trip-stat-value">9</div><div class="trip-stat-label">Days</div></div><div class="trip-stat"><div class="trip-stat-value">2</div><div class="trip-stat-label">Cities</div></div><div class="trip-stat"><div class="trip-stat-value">850</div><div class="trip-stat-label">km</div></div></div>
           <div class="trip-highlights"><div class="highlight-item"><span class="highlight-icon">🏰</span><span>Cartagena historic center</span></div><div class="highlight-item"><span class="highlight-icon">🤿</span><span>Islas del Rosario snorkeling</span></div><div class="highlight-item"><span class="highlight-icon">🎨</span><span>Barrio Getsemaní street art</span></div></div>
         </div>
-        <div class="trip-card" data-mode="girlfriend">
+        <div class="trip-card" data-mode="girlfriend" data-region="america">
           <div class="trip-header"><div class="trip-flag">🇨🇱</div><div class="trip-info"><h3>Chile</h3><div class="trip-date">24–28 Jul, 2025 · With GF 💕</div></div></div>
           <div class="trip-stats"><div class="trip-stat"><div class="trip-stat-value">5</div><div class="trip-stat-label">Days</div></div><div class="trip-stat"><div class="trip-stat-value">1</div><div class="trip-stat-label">City</div></div><div class="trip-stat"><div class="trip-stat-value">250</div><div class="trip-stat-label">km</div></div></div>
           <div class="trip-highlights"><div class="highlight-item"><span class="highlight-icon">🏛️</span><span>Historic Santiago center</span></div><div class="highlight-item"><span class="highlight-icon">🛍️</span><span>Shopping at Parque Arauco</span></div><div class="highlight-item"><span class="highlight-icon">🎨</span><span>Barrio Bellavista</span></div></div>
         </div>
-        <div class="trip-card" data-mode="girlfriend">
+        <div class="trip-card" data-mode="girlfriend" data-region="argentina">
           <div class="trip-header"><div class="trip-flag">🇦🇷</div><div class="trip-info"><h3>Iguazu Falls</h3><div class="trip-date">Jul 2024 · With GF 💕</div></div></div>
           <div class="trip-stats"><div class="trip-stat"><div class="trip-stat-value">4</div><div class="trip-stat-label">Days</div></div><div class="trip-stat"><div class="trip-stat-value">2</div><div class="trip-stat-label">Sides</div></div><div class="trip-stat"><div class="trip-stat-value">600</div><div class="trip-stat-label">km</div></div></div>
           <div class="trip-highlights"><div class="highlight-item"><span class="highlight-icon">🌙</span><span>Full moon excursion</span></div><div class="highlight-item"><span class="highlight-icon">💦</span><span>Brazilian & Argentine sides</span></div><div class="highlight-item"><span class="highlight-icon">🚤</span><span>Boat adventure</span></div></div>
         </div>
-        <div class="trip-card" data-mode="girlfriend">
+        <div class="trip-card" data-mode="girlfriend" data-region="argentina">
           <div class="trip-header"><div class="trip-flag">🇦🇷</div><div class="trip-info"><h3>Salta Region</h3><div class="trip-date">Northern Argentina · With GF 💕</div></div></div>
           <div class="trip-stats"><div class="trip-stat"><div class="trip-stat-value">5</div><div class="trip-stat-label">Days</div></div><div class="trip-stat"><div class="trip-stat-value">4</div><div class="trip-stat-label">Cities</div></div><div class="trip-stat"><div class="trip-stat-value">1.2K</div><div class="trip-stat-label">km</div></div></div>
           <div class="trip-highlights"><div class="highlight-item"><span class="highlight-icon">🧂</span><span>Salinas Grandes salt flats</span></div><div class="highlight-item"><span class="highlight-icon">🏔️</span><span>Quebrada de las Conchas</span></div><div class="highlight-item"><span class="highlight-icon">🍷</span><span>Cafayate wine region</span></div></div>
         </div>
-        <div class="trip-card" data-mode="girlfriend">
+        <div class="trip-card" data-mode="girlfriend" data-region="america">
           <div class="trip-header"><div class="trip-flag">🇺🇾</div><div class="trip-info"><h3>Uruguay</h3><div class="trip-date">22–24 Mar, 2026 · With GF 💕</div></div></div>
           <div class="trip-stats"><div class="trip-stat"><div class="trip-stat-value">3</div><div class="trip-stat-label">Days</div></div><div class="trip-stat"><div class="trip-stat-value">1</div><div class="trip-stat-label">City</div></div><div class="trip-stat"><div class="trip-stat-value">~270</div><div class="trip-stat-label">km</div></div></div>
           <div class="trip-highlights"><div class="highlight-item"><span class="highlight-icon">🏙️</span><span>Ciudad Vieja & la rambla</span></div><div class="highlight-item"><span class="highlight-icon">🥩</span><span>Bar Facal — chivito & asado</span></div><div class="highlight-item"><span class="highlight-icon">🏖️</span><span>Barrios costeros de Pocitos</span></div></div>
         </div>
         <!-- Solo trips -->
-        <div class="trip-card" data-mode="solo">
+        <div class="trip-card" data-mode="solo" data-region="europe">
           <div class="trip-header"><div class="trip-flag">🇵🇱🇮🇱</div><div class="trip-info"><h3>Poland & Israel</h3><div class="trip-date">2025</div></div></div>
           <div class="trip-stats"><div class="trip-stat"><div class="trip-stat-value">2</div><div class="trip-stat-label">Countries</div></div><div class="trip-stat"><div class="trip-stat-value">3</div><div class="trip-stat-label">Cities</div></div><div class="trip-stat"><div class="trip-stat-value">~2K</div><div class="trip-stat-label">km</div></div></div>
           <div class="trip-highlights"><div class="highlight-item"><span class="highlight-icon">🏰</span><span>Kraków and Warsaw</span></div><div class="highlight-item"><span class="highlight-icon">🕊️</span><span>Jerusalem exploration</span></div></div>
         </div>
-        <div class="trip-card" data-mode="solo">
+        <div class="trip-card" data-mode="solo" data-region="america">
           <div class="trip-header"><div class="trip-flag">🇺🇸</div><div class="trip-info"><h3>San Diego</h3><div class="trip-date">2025</div></div></div>
           <div class="trip-stats"><div class="trip-stat"><div class="trip-stat-value">~5</div><div class="trip-stat-label">Days</div></div><div class="trip-stat"><div class="trip-stat-value">1</div><div class="trip-stat-label">City</div></div><div class="trip-stat"><div class="trip-stat-value">200</div><div class="trip-stat-label">km</div></div></div>
           <div class="trip-highlights"><div class="highlight-item"><span class="highlight-icon">🌊</span><span>Pacific beaches</span></div><div class="highlight-item"><span class="highlight-icon">🌮</span><span>Mexican food scene</span></div></div>
         </div>
-        <div class="trip-card" data-mode="solo">
+        <div class="trip-card" data-mode="solo" data-region="america">
           <div class="trip-header"><div class="trip-flag">🇺🇸</div><div class="trip-info"><h3>New York City</h3><div class="trip-date">2024</div></div></div>
           <div class="trip-stats"><div class="trip-stat"><div class="trip-stat-value">~5</div><div class="trip-stat-label">Days</div></div><div class="trip-stat"><div class="trip-stat-value">1</div><div class="trip-stat-label">City</div></div><div class="trip-stat"><div class="trip-stat-value">150</div><div class="trip-stat-label">km</div></div></div>
           <div class="trip-highlights"><div class="highlight-item"><span class="highlight-icon">🗽</span><span>Manhattan & Brooklyn</span></div><div class="highlight-item"><span class="highlight-icon">🎭</span><span>Broadway shows</span></div></div>
         </div>
-        <div class="trip-card" data-mode="solo">
+        <div class="trip-card" data-mode="solo" data-region="america">
           <div class="trip-header"><div class="trip-flag">🇧🇷</div><div class="trip-info"><h3>Rio de Janeiro</h3><div class="trip-date">2023</div></div></div>
           <div class="trip-stats"><div class="trip-stat"><div class="trip-stat-value">~7</div><div class="trip-stat-label">Days</div></div><div class="trip-stat"><div class="trip-stat-value">1</div><div class="trip-stat-label">City</div></div><div class="trip-stat"><div class="trip-stat-value">400</div><div class="trip-stat-label">km</div></div></div>
           <div class="trip-highlights"><div class="highlight-item"><span class="highlight-icon">⛰️</span><span>Christ the Redeemer</span></div><div class="highlight-item"><span class="highlight-icon">🏖️</span><span>Copacabana & Ipanema</span></div></div>
         </div>
-        <div class="trip-card" data-mode="solo">
+        <div class="trip-card" data-mode="solo" data-region="america">
           <div class="trip-header"><div class="trip-flag">🇺🇸</div><div class="trip-info"><h3>Los Angeles</h3><div class="trip-date">2023</div></div></div>
           <div class="trip-stats"><div class="trip-stat"><div class="trip-stat-value">~5</div><div class="trip-stat-label">Days</div></div><div class="trip-stat"><div class="trip-stat-value">1</div><div class="trip-stat-label">City</div></div><div class="trip-stat"><div class="trip-stat-value">300</div><div class="trip-stat-label">km</div></div></div>
           <div class="trip-highlights"><div class="highlight-item"><span class="highlight-icon">🎬</span><span>Hollywood & Santa Monica</span></div><div class="highlight-item"><span class="highlight-icon">🌴</span><span>Venice Beach</span></div></div>
         </div>
-        <div class="trip-card" data-mode="solo">
+        <div class="trip-card" data-mode="solo" data-region="america">
           <div class="trip-header"><div class="trip-flag">🇲🇽</div><div class="trip-info"><h3>Mexico — Riviera Maya</h3><div class="trip-date">2022</div></div></div>
           <div class="trip-stats"><div class="trip-stat"><div class="trip-stat-value">~7</div><div class="trip-stat-label">Days</div></div><div class="trip-stat"><div class="trip-stat-value">3</div><div class="trip-stat-label">Cities</div></div><div class="trip-stat"><div class="trip-stat-value">~200</div><div class="trip-stat-label">km</div></div></div>
           <div class="trip-highlights"><div class="highlight-item"><span class="highlight-icon">🏛️</span><span>Chichen Itza pyramid</span></div><div class="highlight-item"><span class="highlight-icon">🏖️</span><span>Tulum & Playa del Carmen</span></div><div class="highlight-item"><span class="highlight-icon">🤿</span><span>Cancun cenotes diving</span></div></div>
         </div>
-        <div class="trip-card" data-mode="solo">
+        <div class="trip-card" data-mode="solo" data-region="america">
           <div class="trip-header"><div class="trip-flag">🇵🇪</div><div class="trip-info"><h3>Peru — Machu Picchu</h3><div class="trip-date">2020</div></div></div>
           <div class="trip-stats"><div class="trip-stat"><div class="trip-stat-value">10</div><div class="trip-stat-label">Days</div></div><div class="trip-stat"><div class="trip-stat-value">2</div><div class="trip-stat-label">Cities</div></div><div class="trip-stat"><div class="trip-stat-value">~600</div><div class="trip-stat-label">km</div></div></div>
           <div class="trip-highlights"><div class="highlight-item"><span class="highlight-icon">🏛️</span><span>Machu Picchu wonder of the world</span></div><div class="highlight-item"><span class="highlight-icon">🚂</span><span>Sacred Valley exploration</span></div><div class="highlight-item"><span class="highlight-icon">⛰️</span><span>Cusco historic center</span></div></div>
         </div>
-        <div class="trip-card" data-mode="solo">
+        <div class="trip-card" data-mode="solo" data-region="argentina">
           <div class="trip-header"><div class="trip-flag">🇦🇷</div><div class="trip-info"><h3>Patagonia Sur</h3><div class="trip-date">2020</div></div></div>
           <div class="trip-stats"><div class="trip-stat"><div class="trip-stat-value">~7</div><div class="trip-stat-label">Days</div></div><div class="trip-stat"><div class="trip-stat-value">3</div><div class="trip-stat-label">Cities</div></div><div class="trip-stat"><div class="trip-stat-value">1.5K</div><div class="trip-stat-label">km</div></div></div>
           <div class="trip-highlights"><div class="highlight-item"><span class="highlight-icon">🏔️</span><span>El Chaltén & El Calafate</span></div><div class="highlight-item"><span class="highlight-icon">❄️</span><span>Perito Moreno Glacier</span></div></div>
         </div>
-        <div class="trip-card" data-mode="solo">
+        <div class="trip-card" data-mode="solo" data-region="europe">
           <div class="trip-header"><div class="trip-flag">🇮🇹🇭🇷🇬🇷</div><div class="trip-info"><h3>Europe Tour</h3><div class="trip-date">2018</div></div></div>
           <div class="trip-stats"><div class="trip-stat"><div class="trip-stat-value">4</div><div class="trip-stat-label">Countries</div></div><div class="trip-stat"><div class="trip-stat-value">7+</div><div class="trip-stat-label">Cities</div></div><div class="trip-stat"><div class="trip-stat-value">~3K</div><div class="trip-stat-label">km</div></div></div>
           <div class="trip-highlights"><div class="highlight-item"><span class="highlight-icon">🏛️</span><span>Colosseum in Rome</span></div><div class="highlight-item"><span class="highlight-icon">🌊</span><span>Venice, Florence, Dubrovnik</span></div><div class="highlight-item"><span class="highlight-icon">🏝️</span><span>Athens & Mykonos</span></div></div>
         </div>
-        <div class="trip-card" data-mode="solo">
+        <div class="trip-card" data-mode="solo" data-region="america">
           <div class="trip-header"><div class="trip-flag">🇧🇷</div><div class="trip-info"><h3>Rio de Janeiro</h3><div class="trip-date">2016</div></div></div>
           <div class="trip-stats"><div class="trip-stat"><div class="trip-stat-value">~7</div><div class="trip-stat-label">Days</div></div><div class="trip-stat"><div class="trip-stat-value">1</div><div class="trip-stat-label">City</div></div><div class="trip-stat"><div class="trip-stat-value">400</div><div class="trip-stat-label">km</div></div></div>
           <div class="trip-highlights"><div class="highlight-item"><span class="highlight-icon">🏛️</span><span>Christ the Redeemer</span></div><div class="highlight-item"><span class="highlight-icon">🏅</span><span>Olympic Games 2016</span></div><div class="highlight-item"><span class="highlight-icon">🎉</span><span>Carnival vibes</span></div></div>
         </div>
-        <div class="trip-card" data-mode="solo">
+        <div class="trip-card" data-mode="solo" data-region="argentina">
           <div class="trip-header"><div class="trip-flag">🇦🇷</div><div class="trip-info"><h3>Patagonia Norte</h3><div class="trip-date">2015</div></div></div>
           <div class="trip-stats"><div class="trip-stat"><div class="trip-stat-value">~7</div><div class="trip-stat-label">Days</div></div><div class="trip-stat"><div class="trip-stat-value">2</div><div class="trip-stat-label">Cities</div></div><div class="trip-stat"><div class="trip-stat-value">1.5K</div><div class="trip-stat-label">km</div></div></div>
           <div class="trip-highlights"><div class="highlight-item"><span class="highlight-icon">⛰️</span><span>Bariloche & Villa La Angostura</span></div><div class="highlight-item"><span class="highlight-icon">🎿</span><span>Cerro Catedral skiing</span></div></div>
@@ -428,9 +504,29 @@ header p{color:#a1a1aa;font-size:.95rem}
   </div>
 </div>
 
+<nav class="mobile-nav" id="mobileNav">
+  <button class="mobile-nav-btn active" data-tab="overview">
+    <svg viewBox="0 0 24 24"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+    Overview
+  </button>
+  <button class="mobile-nav-btn" data-tab="stats">
+    <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    Stats
+  </button>
+  <button class="mobile-nav-btn" data-tab="trips">
+    <svg viewBox="0 0 24 24"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21 4 19 4c-1 0-1.5.5-3.5 2.5L11 8 2.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L6 12l-2 3H1l-1 1 3 2 2 3 1-1v-3l3-2 3.5 3.3c.3.4.8.5 1.3.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
+    Trips
+  </button>
+  <button class="mobile-nav-btn" data-tab="bucket">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+    Goals
+  </button>
+</nav>
+
 <script>
 // ---- STATE ----
 let currentMode = 'all';
+let currentRegion = 'all';
 
 // ---- STATS DATA ----
 const statsData = {
@@ -477,10 +573,7 @@ function applyMode(mode) {
   setVal('sv-extreme', d.extreme.v); setVal('ss-extreme', d.extreme.s);
 
   // Trips
-  document.querySelectorAll('#tripsGrid .trip-card').forEach(c => {
-    const m = c.getAttribute('data-mode');
-    c.style.display = (mode === 'all' || m === mode || (mode === 'girlfriend' && m === 'girlfriend')) ? 'block' : 'none';
-  });
+  updateTripsDisplay();
 
   // Bucket list
   document.querySelectorAll('#bucketGrid .bucket-goal-card').forEach(c => {
@@ -599,13 +692,53 @@ document.getElementById('sidebarToggle').addEventListener('click', () => {
 });
 
 // ---- TABS ----
+const switchTab = (tabId) => {
+  document.querySelectorAll('.sidebar-icon').forEach(i => i.classList.toggle('active', i.getAttribute('data-tab') === tabId));
+  document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-tab') === tabId));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  const tab = document.getElementById(tabId);
+  if (tab) tab.classList.add('active');
+};
+
 document.querySelectorAll('.sidebar-icon').forEach(icon => {
-  icon.addEventListener('click', () => {
-    document.querySelectorAll('.sidebar-icon').forEach(i => i.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    icon.classList.add('active');
-    const tab = document.getElementById(icon.getAttribute('data-tab'));
-    if (tab) tab.classList.add('active');
+  icon.addEventListener('click', () => switchTab(icon.getAttribute('data-tab')));
+});
+
+document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchTab(btn.getAttribute('data-tab')));
+});
+
+// ---- TRIPS DISPLAY ----
+const regionKeys = ['all','america','europe','argentina','asia','africa'];
+
+const updateTripsDisplay = () => {
+  const counts = {};
+  regionKeys.forEach(r => { counts[r] = 0; });
+
+  document.querySelectorAll('#tripsGrid .trip-card').forEach(c => {
+    const m = c.getAttribute('data-mode');
+    const r = c.getAttribute('data-region');
+    const passesMode = currentMode === 'all' || m === currentMode || (currentMode === 'girlfriend' && m === 'girlfriend');
+    const passesRegion = currentRegion === 'all' || r === currentRegion;
+    const visible = passesMode && passesRegion;
+    c.style.display = visible ? (tripsGrid.classList.contains('list-view') ? 'flex' : 'block') : 'none';
+    if (passesMode) {
+      counts['all']++;
+      if (r) { counts[r] = (counts[r] || 0) + 1; }
+    }
+  });
+
+  regionKeys.forEach(r => {
+    const el = document.getElementById('rc-' + r);
+    if (el) { el.textContent = counts[r] || 0; }
+  });
+};
+
+document.querySelectorAll('.region-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentRegion = btn.getAttribute('data-region');
+    document.querySelectorAll('.region-btn').forEach(b => b.classList.toggle('active', b === btn));
+    updateTripsDisplay();
   });
 });
 
@@ -618,6 +751,26 @@ document.querySelectorAll('.toggle-btn').forEach(btn => {
     parentTab.querySelectorAll('.toggle-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-mode') === mode));
     applyMode(mode);
   });
+});
+
+// ---- VIEW TOGGLE ----
+const tripsGrid = document.getElementById('tripsGrid');
+const listHeader = document.getElementById('listHeader');
+
+document.getElementById('viewCards').addEventListener('click', () => {
+  tripsGrid.classList.remove('list-view');
+  listHeader.style.display = 'none';
+  document.getElementById('viewCards').classList.add('active');
+  document.getElementById('viewList').classList.remove('active');
+  tripsGrid.querySelectorAll('.trip-card').forEach(c => { if (c.style.display !== 'none') c.style.display = 'block'; });
+});
+
+document.getElementById('viewList').addEventListener('click', () => {
+  tripsGrid.classList.add('list-view');
+  listHeader.style.display = 'flex';
+  document.getElementById('viewList').classList.add('active');
+  document.getElementById('viewCards').classList.remove('active');
+  tripsGrid.querySelectorAll('.trip-card').forEach(c => { if (c.style.display !== 'none') c.style.display = 'flex'; });
 });
 
 // ---- INIT ----
