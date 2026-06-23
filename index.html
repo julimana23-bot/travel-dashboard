@@ -80,7 +80,7 @@ header p{color:#a1a1aa;font-size:.95rem}
 .highlight-item{display:flex;align-items:center;gap:8px;color:#d4d4d8;font-size:.9rem;margin-bottom:8px}
 .highlight-icon{opacity:.6}
 .map-section{background:rgba(39,39,42,0.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:30px;margin-bottom:30px}
-.map-container{width:100%;height:520px;background:#0a0a0b;border-radius:12px;position:relative;overflow:hidden;margin-top:20px;cursor:grab;user-select:none}
+.map-container{width:100%;aspect-ratio:2000/720;max-height:540px;background:#0a0a0b;border-radius:12px;position:relative;overflow:hidden;margin-top:20px;cursor:grab;user-select:none}
 .map-container.grabbing{cursor:grabbing}
 .map-svg{width:100%;height:100%}
 .map-ocean{fill:#0b0d12}
@@ -220,7 +220,7 @@ header p{color:#a1a1aa;font-size:.95rem}
             <button class="zoom-btn" id="zoomOut">−</button>
             <button class="zoom-btn" id="resetZoom" style="font-size:.8rem">↺</button>
           </div>
-          <svg class="map-svg" viewBox="0 70 2000 780" id="worldMap" preserveAspectRatio="xMidYMid meet">
+          <svg class="map-svg" viewBox="0 110 2000 720" id="worldMap" preserveAspectRatio="xMidYMid meet">
             <g id="mapGroup">
               <rect class="map-ocean" x="0" y="0" width="2000" height="1000"/>
               <g id="landGroup">
@@ -858,9 +858,9 @@ if (mapGroup) {
 }
 
 // ---- ZOOM/PAN ----
-// Visible map window in user units (matches the SVG viewBox "0 70 2000 780")
+// Visible map window in user units (matches the SVG viewBox "0 110 2000 720")
 const MIN_ZOOM = 1, MAX_ZOOM = 6;
-const VB = { x: 0, y: 70, w: 2000, h: 780, fullW: 2000, fullH: 1000 };
+const VB = { x: 0, y: 110, w: 2000, h: 720, fullW: 2000, fullH: 1000 };
 const worldMap = document.getElementById('worldMap');
 let zoom = 1, panX = 0, panY = 0, isPanning = false, startVB, startPan, mapDragged = false;
 
