@@ -98,6 +98,12 @@ header p{color:#a1a1aa;font-size:.95rem}
 .map-tooltip.show{opacity:1}
 .map-tooltip h4{color:#a78bfa;margin-bottom:4px;font-size:.95rem}
 .map-tooltip p{margin:2px 0;font-size:.85rem}
+.trip-picker{position:absolute;display:none;flex-direction:column;min-width:190px;padding:6px;background:rgba(0,0,0,.96);border:1px solid rgba(167,139,250,.5);border-radius:10px;z-index:1001;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.trip-picker.show{display:flex}
+.trip-picker-title{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:#a1a1aa;padding:4px 8px 6px}
+.trip-picker-item{display:flex;flex-direction:column;gap:2px;text-align:left;padding:7px 8px;background:none;border:none;border-radius:6px;color:#e4e4e7;font-family:inherit;font-size:.88rem;cursor:pointer;transition:background .2s}
+.trip-picker-item:hover{background:rgba(167,139,250,.22)}
+.trip-picker-item span{font-size:.76rem;color:#a1a1aa}
 .zoom-controls{position:absolute;top:16px;right:16px;display:flex;flex-direction:column;gap:8px;z-index:10}
 .zoom-btn{width:36px;height:36px;background:rgba(39,39,42,.9);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:#e4e4e7;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .3s}
 .zoom-btn:hover{background:rgba(167,139,250,.3);border-color:#a78bfa}
@@ -405,10 +411,11 @@ header p{color:#a1a1aa;font-size:.95rem}
             </g>
           </svg>
           <div class="map-tooltip" id="mapTooltip"></div>
+          <div class="trip-picker" id="tripPicker"></div>
         </div>
         <div class="map-legend">
           <div class="legend-dot"></div>
-          <span id="legendText">17 countries visited • 25 cities explored</span>
+          <span id="legendText">—</span>
         </div>
       </div>
     </div>
@@ -970,6 +977,42 @@ function cityMarkers() {
 const mapGroup = document.getElementById('mapGroup');
 const mapContainer = document.getElementById('mapContainer');
 const mapTooltip = document.getElementById('mapTooltip');
+const tripPicker = document.getElementById('tripPicker');
+
+// Position an overlay (tooltip, picker) at a click/hover point inside the map container
+function placeInMap(el, e, dx = 12, dy = -12) {
+  const box = mapContainer.getBoundingClientRect();
+  el.style.left = (e.clientX - box.left + dx) + 'px';
+  el.style.top = (e.clientY - box.top + dy) + 'px';
+}
+
+const closePicker = () => tripPicker?.classList.remove('show');
+
+// A city visited more than once: let the pin ask which trip you meant
+function openTripPicker(loc, e) {
+  tripPicker.innerHTML =
+    `<div class="trip-picker-title">${loc.flag} ${loc.name} — ${loc.trips.length} trips</div>` +
+    // The date is what tells two visits apart; the trip name only helps when it differs
+    loc.trips.map(t => `<button class="trip-picker-item" data-trip="${t.id}">${t.dateLabel}${t.name === loc.name ? '' : `<span>${t.name}</span>`}</button>`).join('');
+  tripPicker.querySelectorAll('.trip-picker-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      closePicker();
+      goToTrip(btn.getAttribute('data-trip'));
+    });
+  });
+  placeInMap(tripPicker, e);
+  tripPicker.classList.add('show');
+  // Keep the picker inside the map once its size is known
+  const box = mapContainer.getBoundingClientRect(), p = tripPicker.getBoundingClientRect();
+  if (p.right > box.right) tripPicker.style.left = Math.max(8, box.width - p.width - 8) + 'px';
+  if (p.bottom > box.bottom) tripPicker.style.top = Math.max(8, box.height - p.height - 8) + 'px';
+  if (p.top < box.top) tripPicker.style.top = '8px';
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('#tripPicker') && !e.target.closest('.marker-group')) closePicker();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePicker(); });
 
 if (mapGroup) {
   cityMarkers().forEach(loc => {
@@ -997,19 +1040,19 @@ if (mapGroup) {
     if (trip) g.style.cursor = 'pointer';
     g.addEventListener('mouseenter', e => {
       const hintText = loc.trips.length > 1
-        ? `→ ${loc.trips.length} trips — click for the latest`
+        ? `→ ${loc.trips.length} trips — click to choose`
         : '→ Click to view trip';
       const hint = trip ? `<p style="color:#a78bfa;margin-top:4px">${hintText}</p>` : '';
       mapTooltip.innerHTML = `<h4>${loc.flag} ${loc.name}</h4><p>${loc.label || loc.country}</p>${hint}`;
-      mapTooltip.style.left = (e.clientX - mapContainer.getBoundingClientRect().left + 12) + 'px';
-      mapTooltip.style.top = (e.clientY - mapContainer.getBoundingClientRect().top - 12) + 'px';
+      placeInMap(mapTooltip, e);
       mapTooltip.classList.add('show');
     });
     g.addEventListener('mouseleave', () => mapTooltip.classList.remove('show'));
-    g.addEventListener('click', () => {
+    g.addEventListener('click', e => {
       if (mapDragged || !trip) return; // ignore clicks that were actually drags
       mapTooltip.classList.remove('show');
-      goToTrip(trip.id);
+      if (loc.trips.length > 1) openTripPicker(loc, e);
+      else goToTrip(trip.id);
     });
     mapGroup.appendChild(g);
   });
@@ -1032,6 +1075,7 @@ function clientToVB(clientX, clientY) {
 }
 
 function applyTransform() {
+  closePicker(); // the picker is anchored to a screen point, not to the map
   // Keep the map covering the visible window — never let it drift into empty space
   panX = clamp(panX, VB.x + VB.w - VB.fullW * zoom, VB.x);
   panY = clamp(panY, VB.y + VB.h - VB.fullH * zoom, VB.y);
@@ -1055,7 +1099,7 @@ document.getElementById('zoomOut')?.addEventListener('click', () => zoomTo(zoom 
 document.getElementById('resetZoom')?.addEventListener('click', () => { zoom=1;panX=0;panY=0; applyTransform(); });
 
 mapContainer?.addEventListener('mousedown', e => {
-  if (e.target.closest('.zoom-controls')) return;
+  if (e.target.closest('.zoom-controls') || e.target.closest('#tripPicker')) return;
   isPanning = true;
   mapDragged = false;
   startVB = clientToVB(e.clientX, e.clientY);
