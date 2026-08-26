@@ -80,7 +80,7 @@ header p{color:#a1a1aa;font-size:.95rem}
 .highlight-item{display:flex;align-items:center;gap:8px;color:#d4d4d8;font-size:.9rem;margin-bottom:8px}
 .highlight-icon{opacity:.6}
 .map-section{background:rgba(39,39,42,0.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:30px;margin-bottom:30px}
-.map-container{width:100%;aspect-ratio:2000/720;max-height:540px;background:#0a0a0b;border-radius:12px;position:relative;overflow:hidden;margin-top:20px;cursor:grab;user-select:none;touch-action:none}
+.map-container{width:100%;aspect-ratio:2000/720;max-height:540px;background:#0a0a0b;border-radius:12px;position:relative;overflow:hidden;margin-top:20px;cursor:grab;user-select:none;touch-action:pan-y}
 .map-container.grabbing{cursor:grabbing}
 .map-svg{width:100%;height:100%;display:block}
 .map-ocean{fill:#0b0d12}
@@ -1405,10 +1405,12 @@ function clientToVB(clientX, clientY) {
 
 function applyTransform() {
   closePicker(); // the picker is anchored to a screen point, not to the map
-  // Keep the map covering the visible window — never let it drift into empty space
-  panX = clamp(panX, VB.x + VB.w - VB.fullW * zoom, VB.x);
-  panY = clamp(panY, VB.y + VB.h - VB.fullH * zoom, VB.y);
+  // Keep the visible window (the viewBox) covered by content — and fully lock pan at zoom 1
+  panX = clamp(panX, (VB.x + VB.w) * (1 - zoom), VB.x * (1 - zoom));
+  panY = clamp(panY, (VB.y + VB.h) * (1 - zoom), VB.y * (1 - zoom));
   mapGroup.setAttribute('transform', `translate(${panX},${panY}) scale(${zoom})`);
+  // Zoom 1: map is locked, let the page scroll through it. Zoomed in: capture the gesture.
+  if (mapContainer) mapContainer.style.touchAction = zoom > 1 ? 'none' : 'pan-y';
 }
 
 // Zoom toward a fixed point U (in SVG user coords) so it stays under the cursor
@@ -1445,17 +1447,20 @@ mapContainer?.addEventListener('mousemove', e => {
 });
 ['mouseup','mouseleave'].forEach(ev => mapContainer?.addEventListener(ev, () => { isPanning = false; mapContainer.classList.remove('grabbing'); }));
 mapContainer?.addEventListener('wheel', e => {
-  e.preventDefault();
   if (e.ctrlKey) {
     // Pinch-to-zoom (trackpad) or ctrl + wheel — zoom toward the cursor
+    e.preventDefault();
     zoomTo(zoom * (e.deltaY < 0 ? 1.08 : 1 / 1.08), clientToVB(e.clientX, e.clientY));
-  } else {
-    // Two-finger scroll / mouse wheel — pan the map (convert px delta to user units)
-    const scale = worldMap.getScreenCTM().a || 1;
-    panX -= e.deltaX / scale;
-    panY -= e.deltaY / scale;
-    applyTransform();
+    return;
   }
+  // At default zoom the map is locked — let the wheel scroll the page normally
+  if (zoom <= 1) return;
+  // Zoomed in: two-finger scroll / mouse wheel pans the map (px delta → user units)
+  e.preventDefault();
+  const scale = worldMap.getScreenCTM().a || 1;
+  panX -= e.deltaX / scale;
+  panY -= e.deltaY / scale;
+  applyTransform();
 }, { passive: false });
 
 // ---- MAP TOUCH — one finger pans, two fingers pinch-zoom ----
@@ -1468,7 +1473,7 @@ mapContainer?.addEventListener('touchstart', e => {
   const t = e.touches;
   mapDragged = false;
   if (t.length === 1) {
-    isPanning = true;
+    isPanning = zoom > 1; // at zoom 1 the map is locked — let the swipe scroll the page
     startVB = clientToVB(t[0].clientX, t[0].clientY);
     startPan = { x: panX, y: panY };
   } else if (t.length >= 2) {
@@ -1502,7 +1507,7 @@ function endMapTouch(e) {
   const t = e.touches;
   if (!t || t.length === 0) { isPanning = false; pinchDist = 0; pinchMid = null; }
   else if (t.length === 1) {
-    isPanning = true; pinchDist = 0;
+    isPanning = zoom > 1; pinchDist = 0;
     startVB = clientToVB(t[0].clientX, t[0].clientY);
     startPan = { x: panX, y: panY };
   }
