@@ -8,13 +8,20 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html{overflow-x:hidden}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto',sans-serif;background:#18181b;color:#e4e4e7;min-height:100vh;padding:20px;overflow-x:hidden}
+:root{
+  --bg:#17171a;--surface:#1e1e22;--surface-2:#26262b;
+  --border:rgba(255,255,255,.07);--border-strong:rgba(255,255,255,.13);
+  --text:#e7e7ea;--text-dim:#9a9aa2;--text-faint:#6c6c74;
+  --accent:#a78bfa;--accent-soft:rgba(167,139,250,.13);
+  --radius:12px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:24px;overflow-x:hidden}
 .container{max-width:1600px;margin:0 auto}
 .sidebar{position:fixed;left:0;top:0;height:100vh;width:220px;background:rgba(24,24,27,0.95);backdrop-filter:blur(10px);border-right:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:column;padding:24px 12px;gap:4px;z-index:100;transition:width .3s ease}
 .sidebar.collapsed{width:64px}
 .sidebar-logo{display:flex;align-items:center;gap:12px;padding:8px 8px 24px;margin-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.08)}
 .sidebar-logo-icon{font-size:24px;flex-shrink:0;width:32px;text-align:center}
-.sidebar-logo-text{font-size:1rem;font-weight:600;background:linear-gradient(135deg,#a78bfa,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;white-space:nowrap;overflow:hidden;transition:opacity .2s,width .3s;width:140px}
+.sidebar-logo-text{font-size:.95rem;font-weight:650;letter-spacing:-.01em;color:var(--text);white-space:nowrap;overflow:hidden;transition:opacity .2s,width .3s;width:140px}
 .sidebar.collapsed .sidebar-logo-text{opacity:0;width:0}
 .sidebar-icon{width:100%;display:flex;align-items:center;gap:12px;cursor:pointer;border-radius:10px;transition:all .2s;font-size:18px;padding:10px 8px;color:#a1a1aa}
 .sidebar-icon:hover{background:rgba(255,255,255,0.08);color:#e4e4e7}
@@ -33,52 +40,54 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto',sans-serif
 .main-content.collapsed{margin-left:64px}
 .tab-content{display:none}
 .tab-content.active{display:block}
-header h1{font-size:2rem;font-weight:600;margin-bottom:8px;background:linear-gradient(135deg,#a78bfa,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-header p{color:#a1a1aa;font-size:.95rem}
-.trip-toggle{display:flex;gap:8px;background:rgba(39,39,42,0.8);padding:6px;border-radius:12px}
-.toggle-btn{padding:10px 24px;background:transparent;border:none;color:#a1a1aa;cursor:pointer;border-radius:8px;font-size:.9rem;font-weight:500;transition:all .3s}
-.toggle-btn.active{background:linear-gradient(135deg,#a78bfa,#ec4899);color:#fff}
-.toggle-btn:hover:not(.active){background:rgba(255,255,255,0.1);color:#e4e4e7}
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:30px}
-.stat-card{background:rgba(39,39,42,0.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:20px;transition:all .3s}
-.stat-card:hover{background:rgba(39,39,42,0.8);border-color:rgba(255,255,255,0.2)}
-.stat-label{color:#a1a1aa;font-size:.85rem;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
-.stat-number{font-size:2.5rem;font-weight:600;background:linear-gradient(135deg,#a78bfa,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;transition:all .3s}
-.section-title{font-size:2rem;font-weight:600;margin-bottom:8px;background:linear-gradient(135deg,#a78bfa,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.section-subtitle{color:#a1a1aa;font-size:.95rem;margin-bottom:30px}
-.stats-grid-detailed{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:30px}
-@media(min-width:1081px){#stats .stats-grid-overview{grid-template-columns:repeat(5,minmax(0,1fr))}}
-@media(min-width:769px) and (max-width:1080px){#stats .stats-grid-overview{grid-template-columns:repeat(3,minmax(0,1fr))}}
-.stat-item{background:rgba(39,39,42,0.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:20px;transition:all .3s;position:relative}
-.stat-item:hover{background:rgba(39,39,42,0.8);border-color:rgba(167,139,250,0.3);transform:translateY(-2px)}
-.stat-tooltip{position:absolute;bottom:100%;left:50%;transform:translateX(-50%) translateY(-10px);background:rgba(0,0,0,.95);color:#fff;padding:12px 16px;border-radius:8px;border:1px solid rgba(167,139,250,.5);opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;z-index:1000;min-width:200px;max-width:300px;white-space:normal;font-size:.85rem;line-height:1.5}
+header h1{font-size:1.5rem;font-weight:650;letter-spacing:-.01em;margin-bottom:6px;color:var(--text)}
+header p{color:var(--text-dim);font-size:.9rem}
+.trip-toggle{display:flex;gap:4px;background:var(--surface-2);padding:4px;border-radius:10px}
+.toggle-btn{padding:8px 18px;background:transparent;border:none;color:var(--text-dim);cursor:pointer;border-radius:7px;font-size:.85rem;font-weight:500;transition:background .2s,color .2s}
+.toggle-btn.active{background:var(--accent-soft);color:var(--accent)}
+.toggle-btn:hover:not(.active){background:rgba(255,255,255,0.06);color:var(--text)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:24px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;transition:border-color .2s}
+.stat-card:hover{border-color:var(--border-strong)}
+.stat-label{color:var(--text-dim);font-size:.75rem;margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em}
+.stat-card-top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.stat-card-top .stat-label{margin-bottom:0}
+.sc-ico{width:15px;height:15px;flex-shrink:0;stroke:var(--text-faint);stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;fill:none}
+.stat-number{font-size:1.9rem;font-weight:650;letter-spacing:-.02em;color:var(--text);font-variant-numeric:tabular-nums}
+.section-title{font-size:1.5rem;font-weight:650;letter-spacing:-.01em;margin-bottom:6px;color:var(--text)}
+.section-subtitle{color:var(--text-dim);font-size:.9rem;margin-bottom:20px}
+.stats-grid-detailed{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:20px}
+@media(min-width:900px){#stats .stats-grid-overview{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(min-width:600px) and (max-width:899px){#stats .stats-grid-overview{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stat-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;transition:border-color .2s;position:relative}
+.stat-item:hover{border-color:var(--border-strong)}
+.stat-tooltip{position:absolute;bottom:100%;left:50%;transform:translateX(-50%) translateY(-10px);background:#0c0c0e;color:#fff;padding:12px 16px;border-radius:8px;border:1px solid var(--border-strong);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:1000;min-width:200px;max-width:300px;white-space:normal;font-size:.85rem;line-height:1.5}
 .stat-item:hover .stat-tooltip{opacity:1;transform:translateX(-50%) translateY(-5px)}
-.stat-tooltip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:rgba(0,0,0,.95)}
-.stat-item-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
-.stat-icon{font-size:2rem}
-.stat-title{font-size:.85rem;color:#a1a1aa;text-transform:uppercase;letter-spacing:.5px}
-.stat-value{font-size:2.5rem;font-weight:600;margin-bottom:8px;background:linear-gradient(135deg,#a78bfa,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.stat-subtitle{font-size:.9rem;color:#a1a1aa}
-.progress-bar{width:100%;height:8px;background:rgba(0,0,0,.3);border-radius:4px;overflow:hidden;margin-top:12px}
-.progress-fill{height:100%;background:linear-gradient(90deg,#a78bfa,#ec4899);border-radius:4px;transition:width 1s ease}
-.trips-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
-.trip-card{background:rgba(39,39,42,0.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:24px;transition:all .3s}
-.trip-card:hover{background:rgba(39,39,42,0.8);border-color:rgba(255,255,255,.2);transform:translateY(-2px)}
-.bucket-goal-card{background:rgba(39,39,42,0.6);backdrop-filter:blur(10px);border:1px solid rgba(167,139,250,.3);border-radius:16px;padding:24px;transition:all .3s;position:relative}
-.bucket-goal-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#a78bfa,#ec4899);border-radius:16px 16px 0 0}
-.bucket-goal-card:hover{background:rgba(39,39,42,0.8);border-color:rgba(167,139,250,.5);transform:translateY(-4px)}
-.trip-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
-.trip-flag{font-size:2rem}
-.trip-info h3{font-size:1.2rem;font-weight:600;margin-bottom:4px}
-.trip-date{color:#a1a1aa;font-size:.85rem}
-.trip-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0}
-.trip-stat{background:rgba(0,0,0,.2);padding:12px;border-radius:10px;text-align:center}
-.trip-stat-value{font-size:1.3rem;font-weight:600;color:#a78bfa;margin-bottom:4px}
-.trip-stat-label{font-size:.75rem;color:#a1a1aa;text-transform:uppercase}
-.trip-highlights{margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,.1)}
-.highlight-item{display:flex;align-items:center;gap:8px;color:#d4d4d8;font-size:.9rem;margin-bottom:8px}
-.highlight-icon{opacity:.6}
-.map-section{background:rgba(39,39,42,0.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:30px;margin-bottom:30px}
+.stat-tooltip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:#0c0c0e}
+.stat-item-header{display:flex;align-items:center;gap:9px;margin-bottom:10px}
+.stat-icon{font-size:1.05rem;opacity:.7}
+.stat-title{font-size:.75rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em}
+.stat-value{font-size:1.9rem;font-weight:650;letter-spacing:-.02em;margin-bottom:6px;color:var(--text);font-variant-numeric:tabular-nums}
+.stat-subtitle{font-size:.85rem;color:var(--text-dim);line-height:1.45}
+.progress-bar{width:100%;height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;margin-top:12px}
+.progress-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .8s ease}
+.trips-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+.trip-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;transition:border-color .2s,transform .15s}
+.trip-card:hover{border-color:var(--border-strong);transform:translateY(-1px)}
+.bucket-goal-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;transition:border-color .2s,transform .15s;position:relative}
+.bucket-goal-card:hover{border-color:var(--border-strong);transform:translateY(-1px)}
+.trip-header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.trip-flag{font-size:1.5rem}
+.trip-info h3{font-size:1.05rem;font-weight:620;letter-spacing:-.01em;margin-bottom:3px}
+.trip-date{color:var(--text-dim);font-size:.8rem}
+.trip-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
+.trip-stat{background:rgba(255,255,255,.03);padding:10px;border-radius:8px;text-align:center}
+.trip-stat-value{font-size:1.15rem;font-weight:620;color:var(--text);margin-bottom:3px;font-variant-numeric:tabular-nums}
+.trip-stat-label{font-size:.7rem;color:var(--text-faint);text-transform:uppercase;letter-spacing:.04em}
+.trip-highlights{margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+.highlight-item{display:flex;align-items:center;gap:8px;color:var(--text-dim);font-size:.85rem;margin-bottom:7px}
+.highlight-icon{opacity:.55}
+.map-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:24px}
 .map-container{width:100%;aspect-ratio:2000/720;max-height:540px;background:#0a0a0b;border-radius:12px;position:relative;overflow:hidden;margin-top:20px;cursor:grab;user-select:none;touch-action:pan-y}
 .map-container.grabbing{cursor:grabbing}
 .map-svg{width:100%;height:100%;display:block}
@@ -155,7 +164,7 @@ header p{color:#a1a1aa;font-size:.95rem}
 .region-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px}
 .region-btn{display:flex;align-items:center;gap:8px;padding:8px 16px;background:rgba(39,39,42,0.8);border:1px solid rgba(255,255,255,0.1);color:#a1a1aa;cursor:pointer;border-radius:10px;font-size:.875rem;font-weight:500;transition:all .2s}
 .region-btn:hover:not(.active){background:rgba(255,255,255,0.08);color:#e4e4e7;border-color:rgba(255,255,255,0.2)}
-.region-btn.active{background:linear-gradient(135deg,#a78bfa,#ec4899);border-color:transparent;color:#fff}
+.region-btn.active{background:var(--accent-soft);border-color:rgba(167,139,250,.35);color:var(--accent)}
 .region-count{background:rgba(0,0,0,0.25);border-radius:20px;padding:1px 7px;font-size:.8rem;font-weight:600}
 .region-btn.active .region-count{background:rgba(0,0,0,0.2)}
 /* Region colors */
@@ -224,7 +233,7 @@ header p{color:#a1a1aa;font-size:.95rem}
 .tf-s-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.09em;color:#74747c;font-weight:700;margin-bottom:12px}
 .tf-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .tf-metric{background:rgba(39,39,42,.55);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:12px 8px;text-align:center}
-.tf-metric .tf-m-v{font-size:1.1rem;font-weight:700;font-variant-numeric:tabular-nums;background:linear-gradient(135deg,#a78bfa,#ec4899);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.tf-metric .tf-m-v{font-size:1.1rem;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text)}
 .tf-metric .tf-m-l{font-size:.64rem;text-transform:uppercase;letter-spacing:.04em;color:#74747c;margin-top:4px}
 .tf-hl{display:flex;gap:9px;font-size:.9rem;color:#d4d4d8;margin-bottom:8px}
 .tf-route{position:relative;padding-left:24px}
@@ -278,8 +287,8 @@ header p{color:#a1a1aa;font-size:.95rem}
 #tripsGrid .trip-card{cursor:pointer}
 @media(max-width:768px){.tf-metrics{grid-template-columns:repeat(2,1fr)}}
 /* ---- ADD TRIP VIEW ---- */
-.add-trip-btn{display:inline-flex;align-items:center;gap:7px;padding:10px 18px;border:none;border-radius:10px;background:linear-gradient(135deg,#a78bfa,#ec4899);color:#fff;font-size:.88rem;font-weight:600;cursor:pointer;font-family:inherit}
-.add-trip-btn:hover{opacity:.92}
+.add-trip-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border:none;border-radius:9px;background:var(--accent);color:#191922;font-size:.85rem;font-weight:650;cursor:pointer;font-family:inherit}
+.add-trip-btn:hover{background:#b9a3fb}
 .add-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:22px;align-items:start}
 .drop-zone{border:1.5px dashed rgba(255,255,255,.18);border-radius:16px;padding:40px 26px;text-align:center;background:rgba(39,39,42,.5);transition:border-color .2s,background .2s}
 .drop-zone.drag{border-color:#a78bfa;background:rgba(167,139,250,.08)}
@@ -317,7 +326,8 @@ header p{color:#a1a1aa;font-size:.95rem}
 .rev-fields input,.rev-fields select,.form-field input,.form-field select,.form-field textarea{background:#26262b;border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#e4e4e7;font-size:.82rem;padding:6px 9px;font-family:inherit;outline:none}
 .rev-fields input:focus,.form-field input:focus,.form-field textarea:focus,.form-field select:focus{border-color:#a78bfa}
 .rev-warn{font-size:.75rem;color:#fbbf24;margin-top:8px}
-.btn-primary{padding:10px 20px;border:none;border-radius:10px;background:linear-gradient(135deg,#a78bfa,#ec4899);color:#fff;font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit}
+.btn-primary{padding:9px 18px;border:none;border-radius:9px;background:var(--accent);color:#191922;font-size:.85rem;font-weight:650;cursor:pointer;font-family:inherit}
+.btn-primary:hover{background:#b9a3fb}
 .form-field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
 .form-field label{font-size:.75rem;color:#a1a1aa;font-weight:600}
 .form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
@@ -371,7 +381,7 @@ header p{color:#a1a1aa;font-size:.95rem}
 
     <!-- OVERVIEW TAB -->
     <div class="tab-content active" id="overview">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;flex-wrap:wrap;gap:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;flex-wrap:wrap;gap:16px">
         <div>
           <h1>Travel Dashboard</h1>
           <p>Exploring the world, one adventure at a time</p>
@@ -382,13 +392,25 @@ header p{color:#a1a1aa;font-size:.95rem}
         </div>
       </div>
       <div class="stats-grid" id="statsCards">
-        <div class="stat-card"><div class="stat-label">Total Distance</div><div class="stat-number" id="stat-distance">—</div></div>
-        <div class="stat-card"><div class="stat-label">Countries</div><div class="stat-number" id="stat-countries">—</div></div>
-        <div class="stat-card"><div class="stat-label">Continents</div><div class="stat-number" id="stat-continents">—</div></div>
-        <div class="stat-card"><div class="stat-label">Total Trips</div><div class="stat-number" id="stat-total-trips">—</div></div>
+        <div class="stat-card">
+          <div class="stat-card-top"><svg class="sc-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="5" r="2.5"/><path d="M8.5 19H14a4 4 0 0 0 0-8h-4a4 4 0 0 1 0-8h5.5"/></svg><div class="stat-label">Total Distance</div></div>
+          <div class="stat-number" id="stat-distance">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top"><svg class="sc-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.6 2.6 3.9 5.7 3.9 9S14.6 18.4 12 21C9.4 18.4 8.1 15.3 8.1 12S9.4 5.6 12 3Z"/></svg><div class="stat-label">Countries visited</div></div>
+          <div class="stat-number" id="stat-countries">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top"><svg class="sc-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 4-6 3v13l6-3 6 3 6-3V4l-6 3-6-3Z"/><path d="M9 4v13"/><path d="M15 7v13"/></svg><div class="stat-label">Continents visited</div></div>
+          <div class="stat-number" id="stat-continents">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top"><svg class="sc-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 13h18"/></svg><div class="stat-label">Total Trips</div></div>
+          <div class="stat-number" id="stat-total-trips">—</div>
+        </div>
       </div>
       <div class="map-section">
-        <h2 style="font-size:1.5rem;font-weight:600">Interactive World Map</h2>
+        <h2 class="section-title" style="margin:0">World map</h2>
         <div class="map-container" id="mapContainer">
           <div class="zoom-controls">
             <button class="zoom-btn" id="zoomIn">+</button>
@@ -591,10 +613,10 @@ header p{color:#a1a1aa;font-size:.95rem}
 
     <!-- STATS TAB -->
     <div class="tab-content" id="stats">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;flex-wrap:wrap;gap:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;flex-wrap:wrap;gap:16px">
         <div>
-          <h1 class="section-title">📊 Travel Statistics</h1>
-          <p class="section-subtitle">Your journey by the numbers</p>
+          <h1 class="section-title">Statistics</h1>
+          <p class="section-subtitle">The trips, by the numbers</p>
         </div>
         <div class="trip-toggle">
           <button class="toggle-btn active" data-mode="all">All Trips</button>
@@ -604,39 +626,26 @@ header p{color:#a1a1aa;font-size:.95rem}
       <div class="stats-grid-detailed stats-grid-overview">
         <div class="stat-item">
           <div class="stat-tooltip" id="tt-flight"><strong>All:</strong> Buenos Aires↔Cape Town, Bangkok, LA/NY/SD, Europe, Israel, Rio<br><br><strong>With GF:</strong> Buenos Aires↔Cape Town, Bangkok, Colombia</div>
-          <div class="stat-item-header"><span class="stat-icon">✈️</span><div><div class="stat-title">Flight Hours</div></div></div>
+          <div class="stat-item-header"><div class="stat-title">Flight Hours</div></div>
           <div class="stat-value" id="sv-flight">~350h</div>
-          <div class="stat-subtitle" id="ss-flight">That's 14+ days in the air!</div>
-          <div class="progress-bar"><div class="progress-fill" id="sp-flight" style="width:70%"></div></div>
         </div>
         <div class="stat-item">
           <div class="stat-tooltip" id="tt-countries"></div>
-          <div class="stat-item-header"><span class="stat-icon">🌍</span><div><div class="stat-title">Countries Visited</div></div></div>
-          <div class="stat-value" id="sv-countries">16 / 195</div>
-          <div class="stat-subtitle" id="ss-countries">8.2% of all countries explored</div>
-          <div class="progress-bar"><div class="progress-fill" id="sp-countries" style="width:8.2%"></div></div>
+          <div class="stat-item-header"><div class="stat-title">Countries</div></div>
+          <div class="stat-value" id="sv-countries">16</div>
         </div>
         <div class="stat-item">
           <div class="stat-tooltip" id="tt-continents"></div>
-          <div class="stat-item-header"><span class="stat-icon">🗺️</span><div><div class="stat-title">Continents</div></div></div>
-          <div class="stat-value" id="sv-continents">5 / 7</div>
-          <div class="stat-subtitle" id="ss-continents">71% of the world's continents</div>
-          <div class="progress-bar"><div class="progress-fill" id="sp-continents" style="width:71%"></div></div>
+          <div class="stat-item-header"><div class="stat-title">Continents</div></div>
+          <div class="stat-value" id="sv-continents">5</div>
         </div>
         <div class="stat-item">
-          <div class="stat-item-header"><span class="stat-icon">🏨</span><div><div class="stat-title">Nights Away</div></div></div>
+          <div class="stat-item-header"><div class="stat-title">Nights Away</div></div>
           <div class="stat-value" id="sv-nights">~148</div>
-          <div class="stat-subtitle" id="ss-nights">5+ months exploring the world!</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-tooltip"><strong>All:</strong> Bungee, Safari, Shark diving, Cave exploring, Skiing, Glacier trekking, Scuba<br><br><strong>With GF:</strong> Bungee, Safari, Shark diving, Caves, Snorkeling</div>
-          <div class="stat-item-header"><span class="stat-icon">🎢</span><div><div class="stat-title">Extreme Activities</div></div></div>
-          <div class="stat-value" id="sv-extreme">7</div>
-          <div class="stat-subtitle" id="ss-extreme">Bungee, safari, shark diving, skiing...</div>
         </div>
       </div>
       <div id="spendSection" style="margin-top:36px">
-        <h2 style="font-size:1.5rem;font-weight:600;margin-bottom:6px;color:#a78bfa">💰 Trip Spending</h2>
+        <h2 class="section-title" style="margin:0 0 6px">Spending</h2>
         <p class="section-subtitle" id="spendNote" style="margin-bottom:20px">—</p>
         <div class="stats-grid" style="margin-bottom:20px">
           <div class="stat-card"><div class="stat-label">Total Spent</div><div class="stat-number" id="sp-total">—</div></div>
@@ -707,40 +716,35 @@ header p{color:#a1a1aa;font-size:.95rem}
 
     <!-- BUCKET LIST TAB -->
     <div class="tab-content" id="bucket">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;flex-wrap:wrap;gap:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;flex-wrap:wrap;gap:16px">
         <div>
-          <h1 class="section-title">🎯 Goals & Achievements</h1>
-          <p class="section-subtitle">Dream big, travel bigger</p>
+          <h1 class="section-title">Goals</h1>
+          <p class="section-subtitle">Where to next</p>
         </div>
         <div class="trip-toggle">
           <button class="toggle-btn active" data-mode="all">All Goals</button>
           <button class="toggle-btn" data-mode="girlfriend">Couple Goals</button>
         </div>
       </div>
-      <div class="stats-grid" style="margin-bottom:30px">
-        <div class="stat-card"><div class="stat-label">Continents Progress</div><div class="stat-number" id="b-continents">—</div><div style="font-size:.85rem;color:#a1a1aa;margin-top:8px" id="b-continents-missing"></div></div>
-        <div class="stat-card"><div class="stat-label">UNESCO Sites</div><div class="stat-number" id="b-unesco">12</div><div style="font-size:.85rem;color:#a1a1aa;margin-top:8px">Goal: 50</div></div>
-        <div class="stat-card"><div class="stat-label">Bucket List</div><div class="stat-number" id="b-bucket">—</div><div style="font-size:.85rem;color:#a1a1aa;margin-top:8px" id="b-bucket-sub"></div></div>
+      <div class="stats-grid" style="margin-bottom:24px">
+        <div class="stat-card"><div class="stat-label">Continents</div><div class="stat-number" id="b-continents">—</div><div style="font-size:.8rem;color:var(--text-dim);margin-top:8px" id="b-continents-missing"></div></div>
+        <div class="stat-card"><div class="stat-label">Bucket List</div><div class="stat-number" id="b-bucket">—</div><div style="font-size:.8rem;color:var(--text-dim);margin-top:8px" id="b-bucket-sub"></div></div>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px">
-        <h2 style="font-size:1.5rem;font-weight:600">🎯 Bucket List</h2>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+        <h2 class="section-title" style="margin:0">Bucket List</h2>
         <button class="btn-primary" id="addGoalBtn">＋ Add goal</button>
       </div>
       <div class="trips-grid" id="bucketGrid"></div>
-      <h2 style="font-size:1.5rem;font-weight:600;margin:40px 0 8px">🏛️ Wonders of the World</h2>
-      <p class="section-subtitle" style="margin-bottom:20px">Ticked when you've been to the country — <span id="wonder-count">—</span> so far</p>
-      <div class="stats-grid-detailed" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+      <h2 class="section-title" style="margin:36px 0 6px">Wonders of the World</h2>
+      <p class="section-subtitle" style="margin-bottom:16px">Ticked once you've been to the country — <span id="wonder-count">—</span> so far</p>
+      <div class="stats-grid-detailed" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
         <div class="stat-item">
-          <div class="stat-item-header"><span style="font-size:2.5rem">🏛️</span><div><div class="stat-title">New 7 Wonders</div></div></div>
-          <div style="font-size:1.05rem;color:#e4e4e7;margin-bottom:10px">The New7Wonders of the World (2007)</div>
-          <div class="stat-subtitle" id="wonder-modern" style="line-height:1.9"></div>
-          <div class="progress-bar"><div class="progress-fill" id="wonder-modern-bar" style="width:0%"></div></div>
+          <div class="stat-item-header"><div class="stat-title">New 7 Wonders · 2007</div></div>
+          <div class="stat-subtitle" id="wonder-modern" style="line-height:2"></div>
         </div>
         <div class="stat-item">
-          <div class="stat-item-header"><span style="font-size:2.5rem">🌊</span><div><div class="stat-title">7 Natural Wonders</div></div></div>
-          <div style="font-size:1.05rem;color:#e4e4e7;margin-bottom:10px">The New7Wonders of Nature (2011)</div>
-          <div class="stat-subtitle" id="wonder-natural" style="line-height:1.9"></div>
-          <div class="progress-bar"><div class="progress-fill" id="wonder-natural-bar" style="width:0%"></div></div>
+          <div class="stat-item-header"><div class="stat-title">7 Natural Wonders · 2011</div></div>
+          <div class="stat-subtitle" id="wonder-natural" style="line-height:2"></div>
         </div>
       </div>
     </div>
@@ -1047,14 +1051,57 @@ const SEED_TRIPS = [
   }
 ];
 
-// ---- STORE — localStorage overlay on the seed data ----
-// `trips` starts as a deep copy of SEED_TRIPS; once anything is imported/added it's
-// persisted under TRIPS_KEY and that copy wins on the next load.
-const TRIPS_KEY = 'td_trips_v2';
-function loadStoredTrips() { try { const r = localStorage.getItem(TRIPS_KEY); return r ? JSON.parse(r) : null; } catch (e) { return null; } }
-function saveTrips() { try { localStorage.setItem(TRIPS_KEY, JSON.stringify(trips)); } catch (e) {} }
-function resetTrips() { try { localStorage.removeItem(TRIPS_KEY); } catch (e) {} trips.length = 0; JSON.parse(JSON.stringify(SEED_TRIPS)).forEach(t => trips.push(t)); }
-const trips = loadStoredTrips() || JSON.parse(JSON.stringify(SEED_TRIPS));
+// ---- STORE — localStorage keeps only a PATCH over the seed data ----
+// So a later code change to a seed trip still reaches you: the patch records only the
+// trips you edited, deleted or added; everything else always comes from SEED_TRIPS.
+const PATCH_KEY = 'td_trips_patch_v3';
+const OLD_TRIPS_KEY = 'td_trips_v2';   // pre-overlay format: a full snapshot of the array
+const clone = o => JSON.parse(JSON.stringify(o));
+const EMPTY_PATCH = () => ({ v: 3, edited: {}, deleted: [], added: [] });
+
+// Diff a live trips array against the seed → { edited, deleted, added }
+function computePatch(live) {
+  const seedStr = new Map(SEED_TRIPS.map(t => [t.id, JSON.stringify(t)]));
+  const liveIds = new Set(live.map(t => t.id));
+  const patch = EMPTY_PATCH();
+  for (const s of SEED_TRIPS) if (!liveIds.has(s.id)) patch.deleted.push(s.id);
+  for (const t of live) {
+    if (!seedStr.has(t.id)) patch.added.push(t);
+    else if (JSON.stringify(t) !== seedStr.get(t.id)) patch.edited[t.id] = t;
+  }
+  return patch;
+}
+// Fresh seed copy + patch → the array the app renders
+function applyPatch(patch) {
+  const del = new Set(patch.deleted || []);
+  const out = [];
+  for (const s of SEED_TRIPS) {
+    if (del.has(s.id)) continue;
+    out.push((patch.edited && patch.edited[s.id]) || clone(s));
+  }
+  for (const t of (patch.added || [])) out.push(t);
+  return out;
+}
+function loadPatch() {
+  try {
+    const raw = localStorage.getItem(PATCH_KEY);
+    if (raw) return Object.assign(EMPTY_PATCH(), JSON.parse(raw));
+    const old = localStorage.getItem(OLD_TRIPS_KEY);   // one-time migration from the old whole-array format
+    if (old) {
+      const patch = computePatch(JSON.parse(old));
+      localStorage.setItem(PATCH_KEY, JSON.stringify(patch));
+      localStorage.removeItem(OLD_TRIPS_KEY);
+      return patch;
+    }
+  } catch (e) {}
+  return EMPTY_PATCH();
+}
+function saveTrips() { try { localStorage.setItem(PATCH_KEY, JSON.stringify(computePatch(trips))); } catch (e) {} }
+function resetTrips() {
+  try { localStorage.removeItem(PATCH_KEY); localStorage.removeItem(OLD_TRIPS_KEY); } catch (e) {}
+  trips.length = 0; SEED_TRIPS.forEach(s => trips.push(clone(s)));
+}
+const trips = applyPatch(loadPatch());
 
 // ---- BUCKET LIST — same localStorage-overlay pattern as trips ----
 const BUCKET_KEY = 'td_bucket_v1';
@@ -1119,21 +1166,10 @@ const CONTINENTS = {
   'Asia':'🌏', 'Oceania':'🌏', 'Antarctica':'🇦🇶'
 };
 
-// Numbers with no per-trip data behind them — the only ones still typed by hand
-const staticStats = {
-  all: {
-    extreme: { v:'7', s:'Bungee, safari, shark diving, skiing...' },
-    unesco:  '12'
-  },
-  girlfriend: {
-    extreme: { v:'5', s:'Bungee, safari, shark diving...' },
-    unesco:  '5'
-  }
-};
 
 const ROUND_TRIP = 2;      // every trip is a there-and-back flight
 const CRUISE_KMH = 800;    // average incl. climb/descent — for the flight-hours estimate
-const FLIGHT_GOAL_H = 500, COUNTRY_GOAL = 195, CONTINENT_GOAL = 7;
+const COUNTRY_GOAL = 195, CONTINENT_GOAL = 7;
 
 // ---- DERIVED TOTALS ----
 function totals(mode) {
@@ -1164,27 +1200,18 @@ const pct = (n, goal) => Math.round(n / goal * 1000) / 10;
 function applyMode(mode) {
   currentMode = mode;
   const d = T[mode] || T.all;
-  const s = staticStats[mode] || staticStats.all;
 
   // Overview stat cards
   setVal('stat-distance', Math.round(d.km / 1000) + 'K km');
-  setVal('stat-countries', d.countries.length);
-  setVal('stat-continents', d.continents.length);
+  setVal('stat-countries', `${d.countries.length} / ${COUNTRY_GOAL}`);
+  setVal('stat-continents', `${d.continents.length} / ${CONTINENT_GOAL}`);
   setVal('stat-total-trips', d.trips);
 
   // Stats tab
   setVal('sv-flight', `~${d.hours}h`);
-  setVal('ss-flight', `That's ${Math.floor(d.hours / 24)}+ days in the air!`);
-  setWidth('sp-flight', Math.min(100, pct(d.hours, FLIGHT_GOAL_H)));
-  setVal('sv-countries', `${d.countries.length} / ${COUNTRY_GOAL}`);
-  setVal('ss-countries', `${pct(d.countries.length, COUNTRY_GOAL)}% of all countries explored`);
-  setWidth('sp-countries', pct(d.countries.length, COUNTRY_GOAL));
-  setVal('sv-continents', `${d.continents.length} / ${CONTINENT_GOAL}`);
-  setVal('ss-continents', `${Math.round(pct(d.continents.length, CONTINENT_GOAL))}% of the world's continents`);
-  setWidth('sp-continents', pct(d.continents.length, CONTINENT_GOAL));
+  setVal('sv-countries', d.countries.length);
+  setVal('sv-continents', d.continents.length);
   setVal('sv-nights', `~${d.days}`);
-  setVal('ss-nights', `${Math.floor(d.days / 30)}+ months exploring the world!`);
-  setVal('sv-extreme', s.extreme.v); setVal('ss-extreme', s.extreme.s);
 
   // Trips
   updateTripsDisplay();
@@ -1195,9 +1222,8 @@ function applyMode(mode) {
     c.style.display = (mode === 'all' || c.getAttribute('data-bucket-mode') === 'couple') ? '' : 'none';
   });
   const shown = mode === 'all' ? bucketList : bucketList.filter(b => b.mode === 'couple');
-  setVal('b-continents', `${d.continents.length}/${CONTINENT_GOAL}`);
+  setVal('b-continents', `${d.continents.length} / ${CONTINENT_GOAL}`);
   setVal('b-continents-missing', 'Missing: ' + Object.keys(CONTINENTS).filter(c => !d.continents.includes(c)).join(', '));
-  setVal('b-unesco', s.unesco);
   setVal('b-bucket', shown.length);
   setVal('b-bucket-sub', mode === 'all' ? 'places on the wishlist' : 'couple trips on the wishlist');
 
@@ -1249,17 +1275,15 @@ function renderStaticStats() {
 // Wonders of the World — ticked from the visited-country set, so it updates itself
 function renderWonders() {
   const visited = new Set(T.all.countries.map(([c]) => c));
-  const paint = (list, listId, barId) => {
+  const paint = (list, listId) => {
     const el = document.getElementById(listId);
-    if (!el) return list.filter(([, c]) => visited.has(c)).length;
-    el.innerHTML = list.map(([name, c]) =>
-      `${visited.has(c) ? '✅' : '⬜'} ${esc(name)}`).join('<br>');
     const hit = list.filter(([, c]) => visited.has(c)).length;
-    setWidth(barId, Math.round(hit / list.length * 100));
+    if (el) el.innerHTML = list.map(([name, c]) =>
+      `${visited.has(c) ? '✅' : '⬜'} ${esc(name)}`).join('<br>');
     return hit;
   };
-  const m = paint(MODERN_WONDERS, 'wonder-modern', 'wonder-modern-bar');
-  const n = paint(NATURAL_WONDERS, 'wonder-natural', 'wonder-natural-bar');
+  const m = paint(MODERN_WONDERS, 'wonder-modern');
+  const n = paint(NATURAL_WONDERS, 'wonder-natural');
   setVal('wonder-count', `${m + n} / ${MODERN_WONDERS.length + NATURAL_WONDERS.length}`);
 }
 
@@ -1270,7 +1294,7 @@ function renderBucket() {
   grid.innerHTML = bucketList.map((b, i) => `
     <div class="trip-card bucket-goal-card" data-bucket-mode="${b.mode === 'couple' ? 'couple' : 'solo'}">
       <button class="bucket-del" data-del="${i}" title="Remove" aria-label="Remove goal">✕</button>
-      <div class="trip-header"><div class="trip-flag">${esc(b.flag || '📍')}</div><div class="trip-info"><h3>${esc(b.name)}</h3><div class="trip-date" style="color:#a78bfa">${esc(b.status || 'Planned: TBD')}</div></div></div>
+      <div class="trip-header"><div class="trip-flag">${esc(b.flag || '📍')}</div><div class="trip-info"><h3>${esc(b.name)}</h3><div class="trip-date" style="color:var(--accent)">${esc(b.status || 'Planned: TBD')}</div></div></div>
       ${(b.highlights && b.highlights.length) ? `<div class="trip-highlights">${b.highlights.map(([ic, tx]) => `<div class="highlight-item"><span class="highlight-icon">${esc(ic)}</span><span>${esc(tx)}</span></div>`).join('')}</div>` : ''}
     </div>`).join('');
   grid.querySelectorAll('[data-del]').forEach(btn => btn.addEventListener('click', () => {
