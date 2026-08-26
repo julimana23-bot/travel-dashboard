@@ -46,12 +46,9 @@ header p{color:#a1a1aa;font-size:.95rem}
 .stat-number{font-size:2.5rem;font-weight:600;background:linear-gradient(135deg,#a78bfa,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;transition:all .3s}
 .section-title{font-size:2rem;font-weight:600;margin-bottom:8px;background:linear-gradient(135deg,#a78bfa,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .section-subtitle{color:#a1a1aa;font-size:.95rem;margin-bottom:30px}
-.milestone{background:linear-gradient(135deg,#a78bfa,#ec4899);border-radius:16px;padding:24px;text-align:center;margin-bottom:30px}
-.milestone-emoji{font-size:3rem;margin-bottom:12px}
-.milestone-text{font-size:1.2rem;font-weight:600;color:#fff}
 .stats-grid-detailed{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:30px}
-@media(min-width:1081px){#stats .stats-grid-detailed{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(min-width:769px) and (max-width:1080px){#stats .stats-grid-detailed{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:1081px){#stats .stats-grid-overview{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media(min-width:769px) and (max-width:1080px){#stats .stats-grid-overview{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .stat-item{background:rgba(39,39,42,0.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:20px;transition:all .3s;position:relative}
 .stat-item:hover{background:rgba(39,39,42,0.8);border-color:rgba(167,139,250,0.3);transform:translateY(-2px)}
 .stat-tooltip{position:absolute;bottom:100%;left:50%;transform:translateX(-50%) translateY(-10px);background:rgba(0,0,0,.95);color:#fff;padding:12px 16px;border-radius:8px;border:1px solid rgba(167,139,250,.5);opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;z-index:1000;min-width:200px;max-width:300px;white-space:normal;font-size:.85rem;line-height:1.5}
@@ -130,9 +127,6 @@ header p{color:#a1a1aa;font-size:.95rem}
   .stat-item-header{gap:10px;margin-bottom:8px}
   .stat-icon{font-size:1.6rem}
   .stat-value{font-size:1.9rem;margin-bottom:6px}
-  .milestone{padding:18px}
-  .milestone-emoji{font-size:2.2rem;margin-bottom:8px}
-  .milestone-text{font-size:1rem}
   .map-section{padding:16px}
   .map-container{aspect-ratio:auto;height:58vw;min-height:240px;max-height:330px;margin-top:14px}
   .zoom-btn{width:36px;height:36px;font-size:1.25rem}
@@ -599,11 +593,7 @@ header p{color:#a1a1aa;font-size:.95rem}
           <button class="toggle-btn" data-mode="girlfriend">With Girlfriend</button>
         </div>
       </div>
-      <div class="milestone">
-        <div class="milestone-emoji">🏆</div>
-        <div class="milestone-text" id="milestoneText">World Explorer Level 14 — Keep going!</div>
-      </div>
-      <div class="stats-grid-detailed">
+      <div class="stats-grid-detailed stats-grid-overview">
         <div class="stat-item">
           <div class="stat-tooltip" id="tt-flight"><strong>All:</strong> Buenos Aires↔Cape Town, Bangkok, LA/NY/SD, Europe, Israel, Rio<br><br><strong>With GF:</strong> Buenos Aires↔Cape Town, Bangkok, Colombia</div>
           <div class="stat-item-header"><span class="stat-icon">✈️</span><div><div class="stat-title">Flight Hours</div></div></div>
@@ -629,11 +619,6 @@ header p{color:#a1a1aa;font-size:.95rem}
           <div class="stat-item-header"><span class="stat-icon">🏨</span><div><div class="stat-title">Nights Away</div></div></div>
           <div class="stat-value" id="sv-nights">~148</div>
           <div class="stat-subtitle" id="ss-nights">5+ months exploring the world!</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-item-header"><span class="stat-icon">📸</span><div><div class="stat-title">Memories Captured</div></div></div>
-          <div class="stat-value" id="sv-photos">~4,000+</div>
-          <div class="stat-subtitle" id="ss-photos">Photos and videos from adventures</div>
         </div>
         <div class="stat-item">
           <div class="stat-tooltip"><strong>All:</strong> Bungee, Safari, Shark diving, Cave exploring, Skiing, Glacier trekking, Scuba<br><br><strong>With GF:</strong> Bungee, Safari, Shark diving, Caves, Snorkeling</div>
@@ -1098,12 +1083,10 @@ const CONTINENTS = {
 // Numbers with no per-trip data behind them — the only ones still typed by hand
 const staticStats = {
   all: {
-    photos:  { v:'~5,000+', s:'Photos and videos from adventures' },
     extreme: { v:'7', s:'Bungee, safari, shark diving, skiing...' },
     unesco:  '12'
   },
   girlfriend: {
-    photos:  { v:'~2,300+', s:'Photos and videos from adventures' },
     extreme: { v:'5', s:'Bungee, safari, shark diving...' },
     unesco:  '5'
   }
@@ -1151,7 +1134,6 @@ function applyMode(mode) {
   setVal('stat-total-trips', d.trips);
 
   // Stats tab
-  setVal('milestoneText', `World Explorer Level ${d.countries.length} — Keep going!`);
   setVal('sv-flight', `~${d.hours}h`);
   setVal('ss-flight', `That's ${Math.floor(d.hours / 24)}+ days in the air!`);
   setWidth('sp-flight', Math.min(100, pct(d.hours, FLIGHT_GOAL_H)));
@@ -1163,7 +1145,6 @@ function applyMode(mode) {
   setWidth('sp-continents', pct(d.continents.length, CONTINENT_GOAL));
   setVal('sv-nights', `~${d.days}`);
   setVal('ss-nights', `${Math.floor(d.days / 30)}+ months exploring the world!`);
-  setVal('sv-photos', s.photos.v); setVal('ss-photos', s.photos.s);
   setVal('sv-extreme', s.extreme.v); setVal('ss-extreme', s.extreme.s);
 
   // Trips
@@ -1194,14 +1175,15 @@ function applyMode(mode) {
 
 // Spend stats on the Statistics tab — only trips with expenses logged count
 function renderSpending(mode) {
-  const ts = (mode === 'girlfriend' ? trips.filter(t => t.mode === 'girlfriend') : trips).filter(t => tripSpend(t) > 0);
+  const scope = mode === 'girlfriend' ? trips.filter(t => t.mode === 'girlfriend') : trips;
+  const ts = scope.filter(t => tripSpend(t) > 0);
   const note = document.getElementById('spendNote');
   const bar = document.getElementById('sp-bar'), key = document.getElementById('sp-key');
   if (!ts.length) {
     ['sp-total', 'sp-avg', 'sp-day', 'sp-max'].forEach(id => setVal(id, '—'));
     setVal('sp-max-sub', '');
     if (bar) bar.innerHTML = ''; if (key) key.innerHTML = '';
-    if (note) note.textContent = 'No trips with a budget logged yet — add costs when you import or edit a trip.';
+    if (note) note.textContent = `No costs logged yet on any of your ${scope.length} trips — add costs when you import or edit a trip.`;
     return;
   }
   const total = ts.reduce((s, t) => s + tripSpend(t), 0);
@@ -1217,7 +1199,7 @@ function renderSpending(mode) {
   setVal('sp-max-sub', `${max.flag} ${max.name}`);
   if (bar) bar.innerHTML = cats.map(([c, v]) => `<i style="width:${(v / total * 100).toFixed(1)}%;background:${CAT_COLOR[c] || CAT_COLOR.Other}"></i>`).join('');
   if (key) key.innerHTML = cats.map(([c, v]) => `<span><i style="background:${CAT_COLOR[c] || CAT_COLOR.Other}"></i>${c} ${money(v)} · ${Math.round(v / total * 100)}%</span>`).join('');
-  if (note) note.textContent = `Based on ${ts.length} trip${ts.length === 1 ? '' : 's'} with costs logged.`;
+  if (note) note.textContent = `Based on ${ts.length} of ${scope.length} trip${scope.length === 1 ? '' : 's'} — only those with costs logged.`;
 }
 
 // Values that don't depend on the mode toggle — set once at init
@@ -1938,16 +1920,21 @@ function rowsToDraft(objs, name) {
 function finalizeTrip(d, opts) {
   const gf = opts.mode === 'girlfriend';
   const coords = opts.coords || {};
-  const cities = d.places.map(p => {
-    const country = opts.placeCountry[p] || '';
-    const ov = coords[p], g = GAZ_P[norm(p)] || {}, cc = GAZ_C[country] || {};
-    return {
-      name: p, country,
-      lat: ov ? ov[0] : (g.lat != null ? g.lat : (cc.lat || 0)),
-      lng: ov ? ov[1] : (g.lng != null ? g.lng : (cc.lng || 0)),
-      flag: flagFor(country)
-    };
-  });
+  const builtFromStops = !!(d.stops && d.stops.length);
+  // Editing a trip whose places weren't re-entered as stops: keep its existing cities
+  // (real names + coords) instead of collapsing them to one entry from the trip name.
+  const cities = (!builtFromStops && opts.existingCities && opts.existingCities.length)
+    ? opts.existingCities
+    : d.places.map(p => {
+      const country = opts.placeCountry[p] || '';
+      const ov = coords[p], g = GAZ_P[norm(p)] || {}, cc = GAZ_C[country] || {};
+      return {
+        name: p, country,
+        lat: ov ? ov[0] : (g.lat != null ? g.lat : (cc.lat || 0)),
+        lng: ov ? ov[1] : (g.lng != null ? g.lng : (cc.lng || 0)),
+        flag: flagFor(country)
+      };
+    });
   const primary = mostCommon(cities.map(c => c.country)) || (cities[0] || {}).country || '';
   const pc0 = cities.find(c => c.country === primary) || cities[0] || { lat: 0, lng: 0 };
   const dist = Math.round(haversine(HOME_BASE.lat, HOME_BASE.lng, pc0.lat, pc0.lng)) || 1000;
@@ -1965,7 +1952,9 @@ function finalizeTrip(d, opts) {
     startDate: d.startDate || undefined, endDate: d.endDate || undefined,
     days, dist, currency: 'USD',
     stats,
-    highlights: (d.stops || []).slice(0, 3).map(s => ['📍', s.place]),
+    highlights: (opts.highlights && opts.highlights.length)
+      ? opts.highlights
+      : (d.stops || []).slice(0, 3).map(s => ['📍', s.place]),
     cities,
     stops: d.stops && d.stops.length ? d.stops : undefined,
     itinerary: d.itinerary && d.itinerary.length ? d.itinerary : undefined,
@@ -2310,11 +2299,16 @@ function renderManual(editTrip) {
     if (!d.expenses.length) d.stops.forEach(s => { if (s.lodging && s.lodging.cost) d.expenses.push({ category: 'Lodging', label: s.lodging.name || s.place, amount: s.lodging.cost }); });
     d.notes = f.notes.value.trim() || undefined;
     if (!d.places.length) d.places.push(d.name);
-    if (!d.startDate && !d.stops.length && !d.itinerary.length) { addMsg('err', 'Add at least a start date, a stop, or one day.'); return; }
+    if (!ed && !d.startDate && !d.stops.length && !d.itinerary.length) { addMsg('err', 'Add at least a start date, a stop, or one day.'); return; }
     d.days = (d.startDate && d.endDate) ? Math.round((new Date(d.endDate) - new Date(d.startDate)) / 864e5) + 1
-      : (d.itinerary.length || d.stops.reduce((a, s) => a + (s.nights || 0), 0) || 1);
+      : (d.itinerary.length || d.stops.reduce((a, s) => a + (s.nights || 0), 0) || (ed && ed.days) || 1);
     const pc = {}; d.places.forEach(p => pc[p] = country);
-    const t = finalizeTrip(d, { placeCountry: pc, name: d.name, mode: f.mode.value, editId: ed ? ed.id : null });
+    const t = finalizeTrip(d, {
+      placeCountry: pc, name: d.name, mode: f.mode.value,
+      editId: ed ? ed.id : null,
+      existingCities: ed ? ed.cities : null,   // keep real city names/coords if stops weren't re-entered
+      highlights: ed ? ed.highlights : null    // keep the card's hand-written highlights
+    });
     if (ed) trips[trips.findIndex(x => x.id === ed.id)] = t;
     else trips.push(t);
     saveTrips(); refreshAll();
