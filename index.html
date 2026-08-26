@@ -308,7 +308,6 @@ header p{color:#a1a1aa;font-size:.95rem}
 .rev-fields input,.rev-fields select,.form-field input,.form-field select,.form-field textarea{background:#26262b;border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#e4e4e7;font-size:.82rem;padding:6px 9px;font-family:inherit;outline:none}
 .rev-fields input:focus,.form-field input:focus,.form-field textarea:focus,.form-field select:focus{border-color:#a78bfa}
 .rev-warn{font-size:.75rem;color:#fbbf24;margin-top:8px}
-.rev-actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
 .btn-primary{padding:10px 20px;border:none;border-radius:10px;background:linear-gradient(135deg,#a78bfa,#ec4899);color:#fff;font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit}
 .form-field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
 .form-field label{font-size:.75rem;color:#a1a1aa;font-weight:600}
@@ -1797,6 +1796,21 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&am
 const slug = s => norm(s).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'trip';
 function uniqueId(base) { let id = base, n = 2; while (trips.some(t => t.id === id)) id = base + '-' + n++; return id; }
 function flagFor(country) { const iso = (GAZ_C[country] || {}).iso; return iso ? iso.replace(/./g, c => String.fromCodePoint(0x1F1E6 - 65 + c.charCodeAt(0))) : '🌍'; }
+// Learn every place already logged (name -> country + coords) so future imports resolve on their own
+trips.forEach(t => (t.cities || []).forEach(c => {
+  const k = norm(c.name);
+  if (k && !GAZ_P[k]) GAZ_P[k] = { country: c.country, lat: c.lat, lng: c.lng };
+}));
+const ISO_TO_COUNTRY = {}; Object.entries(GAZ_C).forEach(([n, v]) => { ISO_TO_COUNTRY[v.iso] = n; });
+// Read a country out of a flag emoji embedded in text (e.g. a sheet named "Denver 🇺🇸")
+function countryFromFlag(s) {
+  const m = String(s || '').match(/[\u{1F1E6}-\u{1F1FF}]{2}/u);
+  if (!m) return '';
+  const iso = [...m[0]].map(ch => String.fromCodePoint(ch.codePointAt(0) - 0x1F1E6 + 65)).join('');
+  return ISO_TO_COUNTRY[iso] || '';
+}
+// Strip flags / check marks / doubled spaces out of an imported name or place
+const cleanImported = s => String(s || '').replace(/[\u{1F1E6}-\u{1F1FF}]{2}/gu, '').replace(/[✅✔☑]️?/g, '').replace(/\s+/g, ' ').trim();
 function regionForCountry(c) {
   if (c === 'Argentina') return 'argentina';
   const cont = (GAZ_C[c] || {}).cont || (COUNTRIES[c] || {}).cont || '';
@@ -1887,12 +1901,14 @@ function matrixToDraft(matrix, sheetName) {
   return rowsToDraft(objs, sheetName);
 }
 function rowsToDraft(objs, name) {
-  const d = { name: (name || 'Trip').trim(), places: [], stops: [], itinerary: [], expenses: [], transport: [] };
+  const d = { name: cleanImported(name) || 'Trip', places: [], stops: [], itinerary: [], expenses: [], transport: [] };
+  let flagHint = countryFromFlag(name);
   const stopByPlace = {}; let cur = null; const dates = [];
   objs.forEach(o => {
     const iso = parseDate(o.date);
     if (iso) dates.push(iso);
-    const place = (o.place || '').trim();
+    if (!flagHint) flagHint = countryFromFlag(o.place) || countryFromFlag(o.act);
+    const place = cleanImported(o.place);
     if (place) {
       cur = stopByPlace[norm(place)];
       if (!cur) { cur = { place, nights: 0, eat: [] }; stopByPlace[norm(place)] = cur; d.stops.push(cur); d.places.push(place); }
@@ -1915,6 +1931,7 @@ function rowsToDraft(objs, name) {
   d.days = (d.startDate && d.endDate) ? Math.round((new Date(d.endDate) - new Date(d.startDate)) / 864e5) + 1
     : (d.itinerary.length || d.stops.reduce((a, s) => a + (s.nights || 0), 0) || 1);
   if (!d.places.length) d.places.push(d.name);
+  d._flagCountry = flagHint || '';
   return d;
 }
 function finalizeTrip(d, opts) {
@@ -2131,11 +2148,13 @@ function showReview(drafts, filename) {
         <button class="btn-ghost" id="revBack">← Back</button>
         <div style="font-size:.95rem;font-weight:600">Review ${drafts.length} trip${drafts.length === 1 ? '' : 's'} <span style="color:#71717a;font-weight:400">· from ${esc(filename)}</span></div>
       </div>
-      <button class="btn-primary" id="importBtn">Import</button>
+      <div style="display:flex;gap:10px;flex-shrink:0">
+        <button class="btn-ghost" id="revCancel">Cancel</button>
+        <button class="btn-primary" id="importBtn">Import</button>
+      </div>
     </div>
     <datalist id="countryList">${Object.keys(GAZ_C).sort().map(c => `<option value="${c}">`).join('')}</datalist>
     <div class="rev-list" id="revList"></div>
-    <div class="rev-actions"><button class="btn-ghost" id="revCancel">Cancel</button></div>
     <div id="addMsg"></div>`;
   const list = document.getElementById('revList');
   drafts.forEach(d => list.appendChild(revCard(d)));
@@ -2146,7 +2165,7 @@ function showReview(drafts, filename) {
 let _reviewDrafts = [];
 function revCard(d) {
   const distinct = [...new Set(d.places)];
-  const guesses = {}; distinct.forEach(p => guesses[p] = (GAZ_P[norm(p)] || {}).country || '');
+  const guesses = {}; distinct.forEach(p => guesses[p] = (GAZ_P[norm(p)] || {}).country || countryFromFlag(p) || d._flagCountry || '');
   const filled = [...new Set(Object.values(guesses))].filter(Boolean);
   const single = distinct.length === 1 || (filled.length === 1 && Object.values(guesses).every(Boolean));
   const spend = (d.expenses || []).reduce((s, e) => s + (+e.amount || 0), 0);
@@ -2214,6 +2233,10 @@ function renderManual(editTrip) {
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
       <button type="button" class="btn-ghost" id="mBack">← Back</button>
       <span style="font-weight:600">${ed ? 'Editing ' + esc(ed.name) : 'New trip'}</span>
+      <div style="margin-left:auto;display:flex;gap:10px;flex-shrink:0">
+        <button type="button" class="btn-ghost" id="mCancel">Cancel</button>
+        <button type="submit" class="btn-primary">${ed ? 'Save changes' : 'Save trip'}</button>
+      </div>
     </div>
     <div class="form-row">
       <div class="form-field"><label>Trip name</label><input name="name" placeholder="Costa Rica" value="${ed ? esc(ed.name) : ''}" required></div>
@@ -2228,10 +2251,6 @@ function renderManual(editTrip) {
     <div class="form-sub"><h5>Expenses</h5><div id="expRows"></div><button type="button" class="mini-btn" id="addExp">＋ Add expense</button></div>
     <div class="form-sub"><h5>Day by day (optional)</h5><div id="dayRows"></div><button type="button" class="mini-btn" id="addDay">＋ Add day</button></div>
     <div class="form-field"><label>Notes</label><textarea name="notes" rows="2" placeholder="Anything else worth remembering">${ed && ed.notes ? esc(ed.notes) : ''}</textarea></div>
-    <div class="rev-actions">
-      <button type="button" class="btn-ghost" id="mCancel">Cancel</button>
-      <button type="submit" class="btn-primary">${ed ? 'Save changes' : 'Save trip'}</button>
-    </div>
     <div id="addMsg"></div>
   </form>`;
   const form = document.getElementById('manualForm');
