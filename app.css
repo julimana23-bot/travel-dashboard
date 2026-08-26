@@ -215,6 +215,7 @@ header p{color:var(--text-dim);font-size:.9rem}
 .tf-top{display:flex;align-items:center;gap:12px}
 .tf-icon-btn{width:32px;height:32px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.12);border-radius:9px;background:transparent;color:#a6a6ad;cursor:pointer;font-size:16px;line-height:1}
 .tf-icon-btn:hover{background:rgba(255,255,255,.06);color:#e9e9ec}
+.tf-close-x{margin-left:auto;border-radius:50%;font-size:20px}
 .tf-title{flex:1;min-width:0;display:flex;align-items:center;gap:10px}
 .tf-title .tf-flag{font-size:1.6rem}
 .tf-title h2{font-size:1.28rem;font-weight:600;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#e9e9ec}

@@ -924,8 +924,8 @@ function renderFlyout(t) {
   let html = `
     <div class="tf-head">
       <div class="tf-top">
-        <button class="tf-icon-btn" data-tf-close aria-label="Close">&rsaquo;</button>
         <div class="tf-title"><span class="tf-flag">${t.flag}</span><h2>${t.name}</h2></div>
+        <button class="tf-icon-btn tf-close-x" data-tf-close aria-label="Close">&times;</button>
       </div>
       <div class="tf-meta">
         <span>${t.dateLabel}</span>
@@ -991,9 +991,8 @@ function renderFlyout(t) {
   if (!hasRich) html += `<section><div class="tf-empty">No detailed itinerary yet. Import an Excel or add stops, budget and day-by-day plans to see the full breakdown here.</div></section>`;
 
   html += `</div><div class="tf-foot">
-    <button class="tf-btn" data-tf-edit>Edit</button>
+    <button class="tf-btn tf-primary" data-tf-edit>Edit</button>
     <button class="tf-btn tf-danger" data-tf-del>Delete</button>
-    <button class="tf-btn tf-primary" data-tf-close>Close</button>
   </div>`;
   tfPanel.innerHTML = html;
 }
