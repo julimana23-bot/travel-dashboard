@@ -655,50 +655,83 @@ let zoom = 1, panX = 0, panY = 0, isPanning = false, startVB, startPan, mapDragg
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
-// Map a client (screen) point into SVG user coordinates (the space pan/scale live in)
-function clientToVB(clientX, clientY) {
-  const pt = worldMap.createSVGPoint();
-  pt.x = clientX; pt.y = clientY;
-  return pt.matrixTransform(worldMap.getScreenCTM().inverse());
-}
-
 const mapIsFs = () => !!(mapContainer && mapContainer.classList.contains('map-fs'));
 
-function applyTransform() {
-  closePicker(); // the picker is anchored to a screen point, not to the map
-  // The actually-visible window in viewBox units — with preserveAspectRatio="slice" a
-  // portrait/full-screen container crops the sides, so this is narrower than the viewBox.
-  let vx = VB.x, vy = VB.y, vw = VB.w, vh = VB.h;
+// Screen↔viewBox mapping is constant unless the container resizes, so cache it and only
+// refresh on resize / full-screen toggle / at the start of a gesture — never per frame.
+let mapCTMInv = null, visW = { x: VB.x, y: VB.y, w: VB.w, h: VB.h };
+function refreshMapCTM() {
   const ctm = worldMap.getScreenCTM();
-  if (ctm) {
-    const box = mapContainer.getBoundingClientRect(), inv = ctm.inverse();
-    const tl = new DOMPoint(box.left, box.top).matrixTransform(inv);
-    const br = new DOMPoint(box.right, box.bottom).matrixTransform(inv);
-    vx = tl.x; vy = tl.y; vw = br.x - tl.x; vh = br.y - tl.y;
-  }
-  // Keep the content (0..fullW / 0..fullH) covering that window
-  panX = clamp(panX, vx + vw - VB.fullW * zoom, vx);
-  panY = clamp(panY, vy + vh - VB.fullH * zoom, vy);
+  if (!ctm) return;
+  mapCTMInv = ctm.inverse();
+  const b = mapContainer.getBoundingClientRect();
+  const tl = new DOMPoint(b.left, b.top).matrixTransform(mapCTMInv);
+  const br = new DOMPoint(b.right, b.bottom).matrixTransform(mapCTMInv);
+  visW = { x: tl.x, y: tl.y, w: br.x - tl.x, h: br.y - tl.y };
+}
+// Map a client (screen) point into SVG user coordinates (the space pan/scale live in)
+function clientToVB(clientX, clientY) {
+  if (!mapCTMInv) refreshMapCTM();
+  const pt = worldMap.createSVGPoint();
+  pt.x = clientX; pt.y = clientY;
+  return mapCTMInv ? pt.matrixTransform(mapCTMInv) : { x: clientX, y: clientY };
+}
+
+function applyTransform(animate) {
+  closePicker(); // the picker is anchored to a screen point, not to the map
+  // Keep the content (0..fullW / 0..fullH) covering the actually-visible window
+  panX = clamp(panX, visW.x + visW.w - VB.fullW * zoom, visW.x);
+  panY = clamp(panY, visW.y + visW.h - VB.fullH * zoom, visW.y);
+  mapGroup.style.transition = animate ? 'transform .24s cubic-bezier(.22,1,.36,1)' : 'none';
   mapGroup.setAttribute('transform', `translate(${panX},${panY}) scale(${zoom})`);
   // Embedded + zoom 1: let a swipe scroll the page. Zoomed in or full-screen: capture the gesture.
   if (mapContainer) mapContainer.style.touchAction = (mapIsFs() || zoom > 1) ? 'none' : 'pan-y';
 }
 
+// ---- pan momentum ----
+let flingId = 0, velX = 0, velY = 0, velT = 0, velPX = 0, velPY = 0;
+function cancelFling() { if (flingId) cancelAnimationFrame(flingId); flingId = 0; }
+function primeVelocity() { velT = performance.now(); velPX = panX; velPY = panY; velX = velY = 0; }
+function trackVelocity() {
+  const now = performance.now(), dt = now - velT;
+  if (dt > 0 && dt < 120) { velX = (panX - velPX) / dt; velY = (panY - velPY) / dt; }
+  velT = now; velPX = panX; velPY = panY;
+}
+function startFling() {
+  if (Math.hypot(velX, velY) < 0.03) return; // released too slowly to fling
+  let prev = performance.now();
+  const step = () => {
+    const now = performance.now(), dt = Math.min(now - prev, 32); prev = now;
+    const bx = panX, by = panY;
+    panX += velX * dt; panY += velY * dt;
+    applyTransform();
+    if (panX === bx) velX = 0;                 // hit an edge → kill that axis
+    if (panY === by) velY = 0;
+    const k = Math.pow(0.94, dt / 16);
+    velX *= k; velY *= k;
+    flingId = Math.hypot(velX, velY) > 0.004 ? requestAnimationFrame(step) : 0;
+  };
+  flingId = requestAnimationFrame(step);
+}
+
 // Zoom toward a fixed point U (in SVG user coords) so it stays under the cursor
-function zoomTo(newZoom, U) {
+function zoomTo(newZoom, U, animate) {
   newZoom = clamp(newZoom, MIN_ZOOM, MAX_ZOOM);
   if (newZoom === zoom) return;
+  cancelFling();
   panX = U.x - (U.x - panX) / zoom * newZoom;
   panY = U.y - (U.y - panY) / zoom * newZoom;
   zoom = newZoom;
-  applyTransform();
+  applyTransform(animate);
 }
 
 const center = () => ({ x: VB.x + VB.w / 2, y: VB.y + VB.h / 2 });
 
-document.getElementById('zoomIn')?.addEventListener('click', () => zoomTo(zoom * 1.3, center()));
-document.getElementById('zoomOut')?.addEventListener('click', () => zoomTo(zoom / 1.3, center()));
-document.getElementById('resetZoom')?.addEventListener('click', () => { zoom=1;panX=0;panY=0; applyTransform(); });
+document.getElementById('zoomIn')?.addEventListener('click', () => zoomTo(zoom * 1.5, center(), true));
+document.getElementById('zoomOut')?.addEventListener('click', () => zoomTo(zoom / 1.5, center(), true));
+document.getElementById('resetZoom')?.addEventListener('click', () => { cancelFling(); zoom = 1; panX = 0; panY = 0; applyTransform(true); });
+addEventListener('resize', () => { cancelFling(); refreshMapCTM(); applyTransform(); });
+refreshMapCTM();   // prime the screen mapping once at startup
 
 // ---- MAP FULLSCREEN ----
 const mapFsBtn = document.getElementById('mapFsBtn');
@@ -709,8 +742,10 @@ function toggleMapFs(force) {
   mapContainer.classList.toggle('map-fs', on);
   document.body.classList.toggle('map-fs-open', on);
   if (mapFsBtn) mapFsBtn.innerHTML = on ? FS_CLOSE : FS_EXPAND;
+  cancelFling();
   zoom = 1; panX = 0; panY = 0;
-  requestAnimationFrame(applyTransform); // container size changed → re-fit + re-clamp
+  // container size changed → recompute the screen mapping once layout settles, then re-fit
+  requestAnimationFrame(() => { refreshMapCTM(); applyTransform(); });
 }
 mapFsBtn?.addEventListener('click', () => toggleMapFs());
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && mapContainer?.classList.contains('map-fs')) toggleMapFs(false); });
@@ -748,8 +783,12 @@ function openAddTripForCountry(country) {
   if (cf) { cf.value = country; cf.dispatchEvent(new Event('input', { bubbles: true })); }
   if (nf && !nf.value.trim()) nf.value = country;
 }
+const onPhone = () => matchMedia('(max-width:768px)').matches;
 mapContainer?.addEventListener('click', e => {
-  if (mapDragged || e.target.closest('.zoom-controls') || e.target.closest('.map-fs-btn') || e.target.closest('.marker-group') || e.target.closest('#tripPicker')) return;
+  if (mapDragged || e.target.closest('.zoom-controls') || e.target.closest('.map-fs-btn') || e.target.closest('#tripPicker')) return;
+  // Phone: the embedded map is a preview — a tap opens it full-screen (markers still open the trip)
+  if (onPhone() && !mapIsFs()) { if (!e.target.closest('.marker-group')) toggleMapFs(true); return; }
+  if (e.target.closest('.marker-group')) return;
   openAddTripForCountry(countryAtEvent(e));
 });
 mapGroup?.addEventListener('mouseover', e => {
@@ -766,10 +805,13 @@ mapGroup?.addEventListener('mouseout', e => {
 
 mapContainer?.addEventListener('mousedown', e => {
   if (e.target.closest('.zoom-controls') || e.target.closest('.map-fs-btn') || e.target.closest('#tripPicker')) return;
+  cancelFling();
+  refreshMapCTM();
   isPanning = true;
   mapDragged = false;
   startVB = clientToVB(e.clientX, e.clientY);
   startPan = { x: panX, y: panY };
+  primeVelocity();
   mapContainer.classList.add('grabbing');
 });
 mapContainer?.addEventListener('mousemove', e => {
@@ -779,8 +821,12 @@ mapContainer?.addEventListener('mousemove', e => {
   panX = startPan.x + (cur.x - startVB.x);
   panY = startPan.y + (cur.y - startVB.y);
   applyTransform();
+  trackVelocity();
 });
-['mouseup','mouseleave'].forEach(ev => mapContainer?.addEventListener(ev, () => { isPanning = false; mapContainer.classList.remove('grabbing'); }));
+['mouseup','mouseleave'].forEach(ev => mapContainer?.addEventListener(ev, () => {
+  if (isPanning && mapDragged) startFling();
+  isPanning = false; mapContainer.classList.remove('grabbing');
+}));
 mapContainer?.addEventListener('wheel', e => {
   if (e.ctrlKey) {
     // Pinch-to-zoom (trackpad) or ctrl + wheel — zoom toward the cursor
@@ -792,9 +838,11 @@ mapContainer?.addEventListener('wheel', e => {
   if (zoom <= 1 && !mapIsFs()) return;
   // Zoomed in: two-finger scroll / mouse wheel pans the map (px delta → user units)
   e.preventDefault();
-  const scale = worldMap.getScreenCTM().a || 1;
-  panX -= e.deltaX / scale;
-  panY -= e.deltaY / scale;
+  cancelFling();
+  if (!mapCTMInv) refreshMapCTM();
+  const perPx = mapCTMInv ? mapCTMInv.a : 1;
+  panX -= e.deltaX * perPx;
+  panY -= e.deltaY * perPx;
   applyTransform();
 }, { passive: false });
 
@@ -806,11 +854,14 @@ const tMid = t => ({ x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[
 mapContainer?.addEventListener('touchstart', e => {
   if (e.target.closest('.zoom-controls') || e.target.closest('.map-fs-btn') || e.target.closest('#tripPicker')) return;
   const t = e.touches;
+  cancelFling();
+  refreshMapCTM();
   mapDragged = false;
   if (t.length === 1) {
     isPanning = mapIsFs() || zoom > 1; // embedded at zoom 1 stays locked so the page can scroll
     startVB = clientToVB(t[0].clientX, t[0].clientY);
     startPan = { x: panX, y: panY };
+    primeVelocity();
   } else if (t.length >= 2) {
     isPanning = false;
     pinchDist = tDist(t);
@@ -828,6 +879,7 @@ mapContainer?.addEventListener('touchmove', e => {
     panX = startPan.x + (cur.x - startVB.x);
     panY = startPan.y + (cur.y - startVB.y);
     applyTransform();
+    trackVelocity();
   } else if (t.length >= 2 && pinchDist) {
     e.preventDefault();
     const d = tDist(t);
@@ -840,11 +892,14 @@ mapContainer?.addEventListener('touchmove', e => {
 
 function endMapTouch(e) {
   const t = e.touches;
-  if (!t || t.length === 0) { isPanning = false; pinchDist = 0; pinchMid = null; }
-  else if (t.length === 1) {
+  if (!t || t.length === 0) {
+    if (isPanning && mapDragged) startFling();
+    isPanning = false; pinchDist = 0; pinchMid = null;
+  } else if (t.length === 1) {
     isPanning = mapIsFs() || zoom > 1; pinchDist = 0;
     startVB = clientToVB(t[0].clientX, t[0].clientY);
     startPan = { x: panX, y: panY };
+    primeVelocity();
   }
 }
 mapContainer?.addEventListener('touchend', endMapTouch);

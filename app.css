@@ -354,3 +354,13 @@ body.map-fs-open{overflow:hidden}
   #tripsGrid.list-view .trip-stats{display:none}
   #tripsGrid.list-view .trip-info{flex:1;min-width:0}
 }
+
+/* ---- MOBILE MAP — the embedded map is a preview; a tap opens it full-screen ---- */
+@media(max-width:768px){
+  .map-container:not(.map-fs)::after{
+    content:"Tap to explore";
+    position:absolute;left:50%;bottom:12px;transform:translateX(-50%);
+    background:rgba(0,0,0,.55);color:#e7e7ea;font-size:.7rem;font-weight:500;letter-spacing:.02em;
+    padding:5px 12px;border-radius:20px;pointer-events:none;backdrop-filter:blur(4px);
+  }
+}
