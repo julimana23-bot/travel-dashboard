@@ -929,6 +929,7 @@ function renderFlyout(t) {
       </div>
       <div class="tf-meta">
         <span>${t.dateLabel}</span>
+        ${t.dist ? `<span class="tf-tag" title="Estimated flying time each way · ${t.dist.toLocaleString('en-US')} km one-way">✈ ~${fmtDuration(flightHrs(t.dist))} each way</span>` : ''}
         ${t.mode === 'girlfriend' ? '' : '<span class="tf-tag">Solo</span>'}
       </div>
     </div>
@@ -1106,6 +1107,19 @@ function haversine(la1, lo1, la2, lo2) {
   const x = Math.sin(dLa / 2) ** 2 + Math.cos(la1 * r) * Math.cos(la2 * r) * Math.sin(dLo / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(x));
 }
+// Length of the outbound path home → each waypoint in order (km). Return leg is added by callers via ×2.
+function routeKm(pts) {
+  let km = 0;
+  for (let i = 1; i < pts.length; i++) km += haversine(pts[i - 1].lat, pts[i - 1].lng, pts[i].lat, pts[i].lng);
+  return km;
+}
+// One-way block time for a flight of `km`: cruise at CRUISE_KMH + ~40 min taxi / climb / descent.
+function flightHrs(km) { return km > 0 ? km / CRUISE_KMH + 0.7 : 0; }
+function fmtDuration(hrs) {
+  if (!hrs) return '';
+  const h = Math.floor(hrs), m = Math.round((hrs - h) * 60);
+  return m === 60 ? `${h + 1}h` : m ? `${h}h ${m}m` : `${h}h`;
+}
 const mostCommon = arr => { const m = {}; let best = arr[0], bc = 0; arr.forEach(v => { m[v] = (m[v] || 0) + 1; if (m[v] > bc) { bc = m[v]; best = v; } }); return best; };
 function parseDate(s) {
   if (s == null) return null;
@@ -1242,7 +1256,10 @@ function finalizeTrip(d, opts) {
     });
   const primary = mostCommon(cities.map(c => c.country)) || (cities[0] || {}).country || '';
   const pc0 = cities.find(c => c.country === primary) || cities[0] || { lat: 0, lng: 0 };
-  const dist = Math.round(haversine(HOME_BASE.lat, HOME_BASE.lng, pc0.lat, pc0.lng)) || 1000;
+  // Outbound path: home → every stop in route order (inter-city hops included), not just home → main city.
+  const geoPath = [HOME_BASE, ...cities.filter(c => c.lat || c.lng)];
+  const dist = Math.round(routeKm(geoPath))
+    || Math.round(haversine(HOME_BASE.lat, HOME_BASE.lng, pc0.lat, pc0.lng)) || 1000;
   const spend = (d.expenses || []).reduce((s, e) => s + (+e.amount || 0), 0);
   const days = d.days || d.itinerary?.length || 1;
   const label = (d.startDate ? fmtRange(d.startDate, d.endDate) : d.name) + (gf ? ' · With GF 💕' : '');
@@ -1447,6 +1464,17 @@ function showReview(drafts, filename) {
     <div id="addMsg"></div>`;
   const list = document.getElementById('revList');
   drafts.forEach(d => list.appendChild(revCard(d)));
+  list.addEventListener('click', e => {
+    const b = e.target.closest('.rev-auto-edit'); if (!b) return;
+    const box = b.closest('.rev-auto');
+    const inp = box.querySelector('[data-country-all]');
+    inp.type = 'text';
+    inp.setAttribute('list', 'countryList');
+    inp.style.cssText = 'margin-left:2px;background:#26262b;border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#e4e4e7;font-size:.82rem;padding:6px 9px';
+    box.querySelector('.rev-auto-view').textContent = 'Country ';
+    b.remove();
+    inp.focus();
+  });
   document.getElementById('importBtn').onclick = commitImport;
   document.getElementById('revBack').onclick = renderAddEmpty;
   document.getElementById('revCancel').onclick = renderAddEmpty;
@@ -1457,12 +1485,21 @@ function revCard(d) {
   const guesses = {}; distinct.forEach(p => guesses[p] = (GAZ_P[norm(p)] || {}).country || countryFromFlag(p) || d._flagCountry || '');
   const filled = [...new Set(Object.values(guesses))].filter(Boolean);
   const single = distinct.length === 1 || (filled.length === 1 && Object.values(guesses).every(Boolean));
+  // Every place resolved from the gazetteer / an embedded flag → no need to ask, just show it
+  const autoOk = single && filled.length === 1 &&
+    distinct.every(p => (GAZ_P[norm(p)] || {}).country || countryFromFlag(p));
   const spend = (d.expenses || []).reduce((s, e) => s + (+e.amount || 0), 0);
   const nStops = d.stops.length || distinct.length;
   const meta = `${d.days} day${d.days === 1 ? '' : 's'} · ${nStops} stop${nStops === 1 ? '' : 's'}${spend ? ` · $${Math.round(spend).toLocaleString('en-US')}` : ''}${d._dateSpanOff ? ' · ⚠ check dates' : ''}`;
-  const fields = single
-    ? `<label>Country<input data-country-all list="countryList" value="${esc(filled[0] || '')}" placeholder="Country"></label>`
-    : distinct.map(p => `<label>${esc(p)}<input data-place="${esc(p)}" list="countryList" value="${esc(guesses[p] || '')}" placeholder="Country"></label>`).join('');
+  const fields = autoOk
+    ? `<div class="rev-auto" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+         <span class="rev-auto-view">${flagFor(filled[0])} <b>${esc(filled[0])}</b> <span style="color:#71717a">· auto-detected</span></span>
+         <button type="button" class="rev-auto-edit" style="background:none;border:none;color:var(--accent);font-size:.72rem;cursor:pointer;padding:0;text-decoration:underline">change</button>
+         <input type="hidden" data-country-all value="${esc(filled[0])}">
+       </div>`
+    : single
+      ? `<label>Country<input data-country-all list="countryList" value="${esc(filled[0] || '')}" placeholder="Country"></label>`
+      : distinct.map(p => `<label>${esc(p)}<input data-place="${esc(p)}" list="countryList" value="${esc(guesses[p] || '')}" placeholder="Country"></label>`).join('');
   const unknown = distinct.filter(p => !GAZ_P[norm(p)]);
   const coordFields = unknown.length
     ? `<div class="rev-fields" style="border-top:none;padding-top:4px">${unknown.map(p => `<label>${esc(p)} pin<input data-coord="${esc(p)}" placeholder="lat, lng (optional)"></label>`).join('')}</div>
@@ -1546,7 +1583,7 @@ function renderManual(editTrip) {
   const stopRows = document.getElementById('stopRows'), expRows = document.getElementById('expRows'), dayRows = document.getElementById('dayRows');
   const opt = (list, v) => list.map(o => `<option${o === v ? ' selected' : ''}>${o}</option>`).join('');
   const stopTpl = (v = {}) => rowEl(`<div class="form-row" data-row style="align-items:end">
-    <div class="form-field"><label>Place</label><input data-f="place" placeholder="La Fortuna" value="${esc(v.place || '')}"></div>
+    <div class="form-field"><label>Place</label><input data-f="place" placeholder="La Fortuna" value="${esc(v.place || '')}"><span data-geo-hint style="font-size:.7rem;color:var(--accent);margin-top:4px;min-height:.9rem"></span></div>
     <div class="form-field"><label>Nights</label><input data-f="nights" type="number" min="0" value="${v.nights != null ? v.nights : ''}"></div>
     <div class="form-field"><label>Lodging</label><input data-f="lodging" placeholder="Airbnb" value="${esc(v.lodging || '')}"></div>
     <div class="form-field"><label>Type</label><select data-f="ltype"><option value="">—</option>${opt(['hotel', 'airbnb', 'hostel', 'friends'], v.ltype || '')}</select></div>
@@ -1574,6 +1611,18 @@ function renderManual(editTrip) {
     document.getElementById(btn).onclick = () => box.appendChild(tpl());
     box.addEventListener('click', e => { if (e.target.matches('[data-del]')) e.target.closest('[data-row]').remove(); });
   });
+  // Live geocode: typing a known stop names its country (and fills Main country if still blank)
+  stopRows.addEventListener('input', e => {
+    const inp = e.target.closest('[data-f="place"]'); if (!inp) return;
+    const hint = inp.parentElement.querySelector('[data-geo-hint]');
+    const g = GAZ_P[norm(inp.value)];
+    if (g && g.country) {
+      hint.textContent = `→ ${g.country} ${flagFor(g.country)}`;
+      const cf = form.elements.country;
+      if (cf && !cf.value.trim()) cf.value = g.country;
+    } else hint.textContent = '';
+  });
+  stopRows.querySelectorAll('[data-f="place"]').forEach(inp => inp.dispatchEvent(new Event('input', { bubbles: true })));
   document.getElementById('mBack').onclick = renderAddEmpty;
   document.getElementById('mBack').onclick = renderAddEmpty;
   document.getElementById('mCancel').onclick = renderAddEmpty;
