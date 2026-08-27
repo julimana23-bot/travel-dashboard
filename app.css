@@ -80,7 +80,7 @@ header p{color:var(--text-dim);font-size:.9rem}
 .highlight-item{display:flex;align-items:center;gap:8px;color:var(--text-dim);font-size:.85rem;margin-bottom:7px}
 .highlight-icon{opacity:.55}
 .map-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:24px}
-.map-container{width:100%;aspect-ratio:2000/720;max-height:540px;background:#0a0a0b;border-radius:12px;position:relative;overflow:hidden;margin-top:20px;cursor:grab;user-select:none;touch-action:pan-y}
+.map-container{width:100%;height:clamp(348px, calc(100vh - 400px), 540px);background:#0a0a0b;border-radius:12px;position:relative;overflow:hidden;margin-top:20px;cursor:grab;user-select:none;touch-action:pan-y}
 .map-container.grabbing{cursor:grabbing}
 .map-svg{width:100%;height:100%;display:block}
 .map-ocean{fill:#0b0d12}
