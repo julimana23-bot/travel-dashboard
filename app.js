@@ -688,8 +688,72 @@ document.getElementById('zoomIn')?.addEventListener('click', () => zoomTo(zoom *
 document.getElementById('zoomOut')?.addEventListener('click', () => zoomTo(zoom / 1.3, center()));
 document.getElementById('resetZoom')?.addEventListener('click', () => { zoom=1;panX=0;panY=0; applyTransform(); });
 
+// ---- MAP FULLSCREEN ----
+const mapFsBtn = document.getElementById('mapFsBtn');
+const FS_EXPAND = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>';
+const FS_CLOSE = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+function toggleMapFs(force) {
+  const on = force != null ? force : !mapContainer.classList.contains('map-fs');
+  mapContainer.classList.toggle('map-fs', on);
+  document.body.classList.toggle('map-fs-open', on);
+  if (mapFsBtn) mapFsBtn.innerHTML = on ? FS_CLOSE : FS_EXPAND;
+  zoom = 1; panX = 0; panY = 0;
+  requestAnimationFrame(applyTransform); // container size changed → re-fit + re-clamp
+}
+mapFsBtn?.addEventListener('click', () => toggleMapFs());
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && mapContainer?.classList.contains('map-fs')) toggleMapFs(false); });
+
+// ---- MAP: tap a grey country → start an Add Trip for the nearest known country ----
+const unproject = (x, y) => ({ lng: x / 2000 * 360 - 180, lat: 90 - y / 1000 * 180 });
+function clientToPath(cx, cy) {
+  const pt = worldMap.createSVGPoint();
+  pt.x = cx; pt.y = cy;
+  return pt.matrixTransform(mapGroup.getScreenCTM().inverse());
+}
+function nearestKnownCountry(lat, lng) {
+  let best = '', bestD = Infinity;
+  for (const [name, g] of Object.entries(GAZ_C)) {
+    if (g.lat == null) continue;
+    const d = haversine(lat, lng, g.lat, g.lng);
+    if (d < bestD) { bestD = d; best = name; }
+  }
+  return bestD < 2800 ? best : '';
+}
+function countryAtEvent(e) {
+  const t = e.target;
+  if (!t.classList || !t.classList.contains('country') || t.classList.contains('visited')) return '';
+  const p = clientToPath(e.clientX, e.clientY);
+  const { lat, lng } = unproject(p.x, p.y);
+  return nearestKnownCountry(lat, lng);
+}
+function openAddTripForCountry(country) {
+  if (!country) return;
+  if (mapContainer?.classList.contains('map-fs')) toggleMapFs(false);
+  switchTab('add');
+  renderManual();
+  const cf = document.querySelector('#manualForm [name="country"]');
+  const nf = document.querySelector('#manualForm [name="name"]');
+  if (cf) { cf.value = country; cf.dispatchEvent(new Event('input', { bubbles: true })); }
+  if (nf && !nf.value.trim()) nf.value = country;
+}
+mapContainer?.addEventListener('click', e => {
+  if (mapDragged || e.target.closest('.zoom-controls') || e.target.closest('.map-fs-btn') || e.target.closest('.marker-group') || e.target.closest('#tripPicker')) return;
+  openAddTripForCountry(countryAtEvent(e));
+});
+mapGroup?.addEventListener('mouseover', e => {
+  if (isPanning) return;
+  const c = countryAtEvent(e);
+  if (!c) return;
+  mapTooltip.innerHTML = `<h4>＋ Add a trip</h4><p>${flagFor(c)} ${c}</p>`;
+  placeInMap(mapTooltip, e);
+  mapTooltip.classList.add('show');
+});
+mapGroup?.addEventListener('mouseout', e => {
+  if (e.target.classList && e.target.classList.contains('country') && !e.target.classList.contains('visited')) mapTooltip.classList.remove('show');
+});
+
 mapContainer?.addEventListener('mousedown', e => {
-  if (e.target.closest('.zoom-controls') || e.target.closest('#tripPicker')) return;
+  if (e.target.closest('.zoom-controls') || e.target.closest('.map-fs-btn') || e.target.closest('#tripPicker')) return;
   isPanning = true;
   mapDragged = false;
   startVB = clientToVB(e.clientX, e.clientY);
@@ -728,7 +792,7 @@ const tDist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].c
 const tMid = t => ({ x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2 });
 
 mapContainer?.addEventListener('touchstart', e => {
-  if (e.target.closest('.zoom-controls') || e.target.closest('#tripPicker')) return;
+  if (e.target.closest('.zoom-controls') || e.target.closest('.map-fs-btn') || e.target.closest('#tripPicker')) return;
   const t = e.touches;
   mapDragged = false;
   if (t.length === 1) {
