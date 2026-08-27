@@ -662,14 +662,26 @@ function clientToVB(clientX, clientY) {
   return pt.matrixTransform(worldMap.getScreenCTM().inverse());
 }
 
+const mapIsFs = () => !!(mapContainer && mapContainer.classList.contains('map-fs'));
+
 function applyTransform() {
   closePicker(); // the picker is anchored to a screen point, not to the map
-  // Keep the visible window (the viewBox) covered by content — and fully lock pan at zoom 1
-  panX = clamp(panX, (VB.x + VB.w) * (1 - zoom), VB.x * (1 - zoom));
-  panY = clamp(panY, (VB.y + VB.h) * (1 - zoom), VB.y * (1 - zoom));
+  // The actually-visible window in viewBox units — with preserveAspectRatio="slice" a
+  // portrait/full-screen container crops the sides, so this is narrower than the viewBox.
+  let vx = VB.x, vy = VB.y, vw = VB.w, vh = VB.h;
+  const ctm = worldMap.getScreenCTM();
+  if (ctm) {
+    const box = mapContainer.getBoundingClientRect(), inv = ctm.inverse();
+    const tl = new DOMPoint(box.left, box.top).matrixTransform(inv);
+    const br = new DOMPoint(box.right, box.bottom).matrixTransform(inv);
+    vx = tl.x; vy = tl.y; vw = br.x - tl.x; vh = br.y - tl.y;
+  }
+  // Keep the content (0..fullW / 0..fullH) covering that window
+  panX = clamp(panX, vx + vw - VB.fullW * zoom, vx);
+  panY = clamp(panY, vy + vh - VB.fullH * zoom, vy);
   mapGroup.setAttribute('transform', `translate(${panX},${panY}) scale(${zoom})`);
-  // Zoom 1: map is locked, let the page scroll through it. Zoomed in: capture the gesture.
-  if (mapContainer) mapContainer.style.touchAction = zoom > 1 ? 'none' : 'pan-y';
+  // Embedded + zoom 1: let a swipe scroll the page. Zoomed in or full-screen: capture the gesture.
+  if (mapContainer) mapContainer.style.touchAction = (mapIsFs() || zoom > 1) ? 'none' : 'pan-y';
 }
 
 // Zoom toward a fixed point U (in SVG user coords) so it stays under the cursor
@@ -776,8 +788,8 @@ mapContainer?.addEventListener('wheel', e => {
     zoomTo(zoom * (e.deltaY < 0 ? 1.08 : 1 / 1.08), clientToVB(e.clientX, e.clientY));
     return;
   }
-  // At default zoom the map is locked — let the wheel scroll the page normally
-  if (zoom <= 1) return;
+  // Embedded at default zoom: let the wheel scroll the page. Full-screen always pans.
+  if (zoom <= 1 && !mapIsFs()) return;
   // Zoomed in: two-finger scroll / mouse wheel pans the map (px delta → user units)
   e.preventDefault();
   const scale = worldMap.getScreenCTM().a || 1;
@@ -796,7 +808,7 @@ mapContainer?.addEventListener('touchstart', e => {
   const t = e.touches;
   mapDragged = false;
   if (t.length === 1) {
-    isPanning = zoom > 1; // at zoom 1 the map is locked — let the swipe scroll the page
+    isPanning = mapIsFs() || zoom > 1; // embedded at zoom 1 stays locked so the page can scroll
     startVB = clientToVB(t[0].clientX, t[0].clientY);
     startPan = { x: panX, y: panY };
   } else if (t.length >= 2) {
@@ -830,7 +842,7 @@ function endMapTouch(e) {
   const t = e.touches;
   if (!t || t.length === 0) { isPanning = false; pinchDist = 0; pinchMid = null; }
   else if (t.length === 1) {
-    isPanning = zoom > 1; pinchDist = 0;
+    isPanning = mapIsFs() || zoom > 1; pinchDist = 0;
     startVB = clientToVB(t[0].clientX, t[0].clientY);
     startPan = { x: panX, y: panY };
   }
