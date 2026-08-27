@@ -1077,11 +1077,22 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&am
 const slug = s => norm(s).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'trip';
 function uniqueId(base) { let id = base, n = 2; while (trips.some(t => t.id === id)) id = base + '-' + n++; return id; }
 function flagFor(country) { const iso = (GAZ_C[country] || {}).iso; return iso ? iso.replace(/./g, c => String.fromCodePoint(0x1F1E6 - 65 + c.charCodeAt(0))) : '🌍'; }
-// Learn every place already logged (name -> country + coords) so future imports resolve on their own
+// Learn every place already logged (name -> country + coords) so future imports resolve on their own.
+// Also index each half of a combined name ("Jujuy / Purmamarca" -> "jujuy", "purmamarca").
 trips.forEach(t => (t.cities || []).forEach(c => {
-  const k = norm(c.name);
-  if (k && !GAZ_P[k]) GAZ_P[k] = { country: c.country, lat: c.lat, lng: c.lng };
+  [c.name, ...String(c.name).split(/\s*[/&+]\s*| y | e /i)].forEach(nm => {
+    const k = norm(nm);
+    if (k && !GAZ_P[k]) GAZ_P[k] = { country: c.country, lat: c.lat, lng: c.lng };
+  });
 }));
+// "Salta & Jujuy", "Kraków + Vienna", "Lima / Cusco", "Bariloche y El Bolsón" -> ["Salta", "Jujuy"].
+// Only trusted when a token is a known place, so "Rest & Relax" stays a single name.
+function placesFromName(name) {
+  const parts = String(name || '').split(/\s*(?:&|\+|\/|·|—|–|,| y | e | and )\s*/i)
+    .map(s => cleanImported(s).trim()).filter(Boolean);
+  if (parts.length < 2 || parts.length > 4) return [];
+  return parts.some(p => GAZ_P[norm(p)] || GAZ_C[p]) ? parts : [];
+}
 const ISO_TO_COUNTRY = {}; Object.entries(GAZ_C).forEach(([n, v]) => { ISO_TO_COUNTRY[v.iso] = n; });
 // Read a country out of a flag emoji embedded in text (e.g. a sheet named "Denver 🇺🇸")
 function countryFromFlag(s) {
@@ -1232,7 +1243,11 @@ function rowsToDraft(objs, name) {
   // Trust the date span only if it's a plausible trip length; a stray booking/year cell can blow it up
   d.days = (span >= 1 && span <= 45) ? span : (fromRows || span || 1);
   if (span > 45) d._dateSpanOff = true;
-  if (!d.places.length) d.places.push(d.name);
+  if (!d.places.length) {
+    const split = placesFromName(d.name);
+    if (split.length) { d.places.push(...split); d._namesFromTitle = true; }
+    else d.places.push(d.name);
+  }
   d._flagCountry = flagHint || '';
   return d;
 }
@@ -1490,7 +1505,7 @@ function revCard(d) {
     distinct.every(p => (GAZ_P[norm(p)] || {}).country || countryFromFlag(p));
   const spend = (d.expenses || []).reduce((s, e) => s + (+e.amount || 0), 0);
   const nStops = d.stops.length || distinct.length;
-  const meta = `${d.days} day${d.days === 1 ? '' : 's'} · ${nStops} stop${nStops === 1 ? '' : 's'}${spend ? ` · $${Math.round(spend).toLocaleString('en-US')}` : ''}${d._dateSpanOff ? ' · ⚠ check dates' : ''}`;
+  const meta = `${d.days} day${d.days === 1 ? '' : 's'} · ${nStops} stop${nStops === 1 ? '' : 's'}${spend ? ` · $${Math.round(spend).toLocaleString('en-US')}` : ''}${d._namesFromTitle ? ` · ${distinct.length} places from the name` : ''}${d._dateSpanOff ? ' · ⚠ check dates' : ''}`;
   const fields = autoOk
     ? `<div class="rev-auto" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
          <span class="rev-auto-view">${flagFor(filled[0])} <b>${esc(filled[0])}</b> <span style="color:#71717a">· auto-detected</span></span>
@@ -1655,7 +1670,10 @@ function renderManual(editTrip) {
     });
     if (!d.expenses.length) d.stops.forEach(s => { if (s.lodging && s.lodging.cost) d.expenses.push({ category: 'Lodging', label: s.lodging.name || s.place, amount: s.lodging.cost }); });
     d.notes = f.notes.value.trim() || undefined;
-    if (!d.places.length) d.places.push(d.name);
+    if (!d.places.length) {
+      const split = ed ? [] : placesFromName(d.name);
+      if (split.length) d.places.push(...split); else d.places.push(d.name);
+    }
     if (!ed && !d.startDate && !d.stops.length && !d.itinerary.length) { addMsg('err', 'Add at least a start date, a stop, or one day.'); return; }
     d.days = (d.startDate && d.endDate) ? Math.round((new Date(d.endDate) - new Date(d.startDate)) / 864e5) + 1
       : (d.itinerary.length || d.stops.reduce((a, s) => a + (s.nights || 0), 0) || (ed && ed.days) || 1);
