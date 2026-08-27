@@ -133,11 +133,11 @@ header p{color:var(--text-dim);font-size:.9rem}
   .stat-card{padding:14px 14px 16px}
   .stat-label{font-size:.7rem;margin-bottom:4px}
   .stat-number{font-size:1.7rem}
-  .stats-grid-detailed{grid-template-columns:1fr;gap:12px;margin-top:20px}
-  .stat-item{padding:16px}
-  .stat-item-header{gap:10px;margin-bottom:8px}
-  .stat-icon{font-size:1.6rem}
-  .stat-value{font-size:1.9rem;margin-bottom:6px}
+  .stats-grid-detailed{grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
+  .stat-item{padding:14px}
+  .stat-item-header{gap:8px;margin-bottom:6px}
+  .stat-icon{font-size:1.5rem}
+  .stat-value{font-size:1.7rem;margin-bottom:0}
   .map-section{padding:16px}
   .map-container{aspect-ratio:auto;height:58vw;min-height:240px;max-height:330px;margin-top:14px}
   .zoom-btn{width:36px;height:36px;font-size:1.25rem}
@@ -146,7 +146,6 @@ header p{color:var(--text-dim);font-size:.9rem}
   .marker-pulse{animation-name:pulseM}
   .marker-label{font-size:22px}
   .trips-controls .sort-control,.trips-controls .view-toggle{flex:1 1 auto}
-  .region-filters{flex:1 1 100%}
   .add-trip-btn{width:100%;justify-content:center}
 }
 .mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#1c1c1f;backdrop-filter:blur(12px);border-top:1px solid rgba(255,255,255,0.12);box-shadow:0 -6px 24px rgba(0,0,0,0.5);z-index:200;padding:8px 0 max(env(safe-area-inset-bottom),8px)}
@@ -336,3 +335,16 @@ header p{color:var(--text-dim);font-size:.9rem}
 .trip-badge{display:inline-block;width:6px;height:6px;border-radius:50%;background:#a78bfa;vertical-align:middle;margin-left:7px}
 #spendSection .tf-bar i{display:block}
 #spendSection .tf-bar-key{margin-top:0}
+
+/* ---- MOBILE LOGBOOK — after the base rules (and beating inline styles) ---- */
+@media(max-width:768px){
+  /* region chips: full-width own row, one swipeable strip */
+  #regionFilters.region-filters{flex:1 1 100%!important;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;margin-bottom:14px!important;scrollbar-width:none}
+  #regionFilters.region-filters::-webkit-scrollbar{display:none}
+  #regionFilters .region-btn{flex:0 0 auto;white-space:nowrap}
+  /* list rows: flag + name + date only, tap opens the detail panel */
+  #listHeader{display:none!important}
+  #tripsGrid.list-view .trip-card{padding:12px 14px;gap:12px}
+  #tripsGrid.list-view .trip-stats{display:none}
+  #tripsGrid.list-view .trip-info{flex:1;min-width:0}
+}
