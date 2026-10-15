@@ -523,7 +523,8 @@ function updateMap(mode) {
   const gfVisited = new Set(T.girlfriend.countries.map(([c]) => c));
   // Paint the map from the trip data, and dim what wasn't visited together in "With Girlfriend"
   document.querySelectorAll('.country[data-name]').forEach(p => {
-    const name = SVG_TO_COUNTRY[p.getAttribute('data-name')];
+    const svgName = p.getAttribute('data-name');
+    const name = SVG_TO_COUNTRY[svgName] || svgName;
     const isVisited = visited.has(name);
     p.classList.toggle('visited', isVisited);
     p.setAttribute('data-gf', gfVisited.has(name) ? '1' : '0');
@@ -750,7 +751,7 @@ function toggleMapFs(force) {
 mapFsBtn?.addEventListener('click', () => toggleMapFs());
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && mapContainer?.classList.contains('map-fs')) toggleMapFs(false); });
 
-// ---- MAP: tap a grey country → start an Add Trip for the nearest known country ----
+// ---- MAP: tap a grey country → start an Add Trip for that country ----
 const unproject = (x, y) => ({ lng: x / 2000 * 360 - 180, lat: 90 - y / 1000 * 180 });
 function clientToPath(cx, cy) {
   const pt = worldMap.createSVGPoint();
@@ -769,6 +770,9 @@ function nearestKnownCountry(lat, lng) {
 function countryAtEvent(e) {
   const t = e.target;
   if (!t.classList || !t.classList.contains('country') || t.classList.contains('visited')) return '';
+  // Every path carries its country's name — use it; the nearest-centroid guess is only a fallback
+  const svgName = t.getAttribute('data-name');
+  if (svgName) return SVG_TO_COUNTRY[svgName] || svgName;
   const p = clientToPath(e.clientX, e.clientY);
   const { lat, lng } = unproject(p.x, p.y);
   return nearestKnownCountry(lat, lng);
@@ -1186,7 +1190,54 @@ const _C = {
   'Thailand':['TH',15.9,100.9,'Asia'],'Vietnam':['VN',14.1,108.3,'Asia'],'Cambodia':['KH',12.6,104.9,'Asia'],
   'Indonesia':['ID',-2.5,118.0,'Asia'],'Japan':['JP',36.2,138.3,'Asia'],'China':['CN',35.9,104.2,'Asia'],
   'India':['IN',20.6,79.0,'Asia'],'United Arab Emirates':['AE',24.0,54.0,'Asia'],'Israel':['IL',31.0,34.9,'Asia'],
-  'Jordan':['JO',30.6,36.2,'Asia'],'Australia':['AU',-25.3,133.8,'Oceania'],'New Zealand':['NZ',-41.0,174.0,'Oceania']
+  'Jordan':['JO',30.6,36.2,'Asia'],'Australia':['AU',-25.3,133.8,'Oceania'],'New Zealand':['NZ',-41.0,174.0,'Oceania'],
+  // Every other country on the world map, so hovering/tapping any of them resolves
+  'Fiji':['FJ',-18,175,'Oceania'],'Western Sahara':['EH',24.5,-13,'Africa'],'Kazakhstan':['KZ',48,68,'Asia'],
+  'Uzbekistan':['UZ',41,64,'Asia'],'Papua New Guinea':['PG',-6,147,'Oceania'],'DR Congo':['CD',0,25,'Africa'],
+  'Somalia':['SO',10,49,'Africa'],'Sudan':['SD',15,30,'Africa'],'Chad':['TD',15,19,'Africa'],
+  'Haiti':['HT',19,-72.4,'North America'],'Dominican Republic':['DO',19,-70.7,'North America'],
+  'Russia':['RU',60,100,'Europe'],'Bahamas':['BS',24.2,-76,'North America'],
+  'Falkland Islands':['FK',-51.8,-59,'South America'],'Greenland':['GL',72,-40,'North America'],
+  'French Southern and Antarctic Lands':['TF',-49.2,69.2,'Antarctica'],'Timor-Leste':['TL',-8.8,125.9,'Asia'],
+  'Lesotho':['LS',-29.5,28.5,'Africa'],'Nicaragua':['NI',13,-85,'North America'],
+  'Honduras':['HN',15,-86.5,'North America'],'El Salvador':['SV',13.8,-88.9,'North America'],
+  'Belize':['BZ',17.2,-88.8,'North America'],'Venezuela':['VE',8,-66,'South America'],
+  'Guyana':['GY',5,-59,'South America'],'Suriname':['SR',4,-56,'South America'],
+  'Puerto Rico':['PR',18.2,-66.5,'North America'],'Jamaica':['JM',18.2,-77.5,'North America'],
+  'Zimbabwe':['ZW',-20,30,'Africa'],'Botswana':['BW',-22,24,'Africa'],'Namibia':['NA',-22,17,'Africa'],
+  'Senegal':['SN',14,-14,'Africa'],'Mali':['ML',17,-4,'Africa'],'Mauritania':['MR',20,-12,'Africa'],
+  'Benin':['BJ',9.5,2.2,'Africa'],'Niger':['NE',16,8,'Africa'],'Nigeria':['NG',10,8,'Africa'],
+  'Cameroon':['CM',6,12,'Africa'],'Togo':['TG',8,1.2,'Africa'],'Ghana':['GH',8,-2,'Africa'],
+  'Ivory Coast':['CI',8,-5,'Africa'],'Guinea':['GN',11,-10,'Africa'],'Guinea-Bissau':['GW',12,-15,'Africa'],
+  'Liberia':['LR',6.5,-9.5,'Africa'],'Sierra Leone':['SL',8.5,-11.5,'Africa'],
+  'Burkina Faso':['BF',13,-2,'Africa'],'Central African Republic':['CF',7,21,'Africa'],
+  'Republic of the Congo':['CG',-1,15,'Africa'],'Gabon':['GA',-1,11.8,'Africa'],
+  'Equatorial Guinea':['GQ',2,10,'Africa'],'Zambia':['ZM',-15,30,'Africa'],'Malawi':['MW',-13.5,34,'Africa'],
+  'Mozambique':['MZ',-18.2,35,'Africa'],'Eswatini':['SZ',-26.5,31.5,'Africa'],'Angola':['AO',-12.5,18.5,'Africa'],
+  'Burundi':['BI',-3.5,30,'Africa'],'Lebanon':['LB',33.8,35.8,'Asia'],'Madagascar':['MG',-20,47,'Africa'],
+  'Palestine':['PS',31.9,35.2,'Asia'],'Gambia':['GM',13.5,-16.6,'Africa'],'Tunisia':['TN',34,9,'Africa'],
+  'Algeria':['DZ',28,3,'Africa'],'Qatar':['QA',25.5,51.2,'Asia'],'Kuwait':['KW',29.5,45.8,'Asia'],
+  'Iraq':['IQ',33,44,'Asia'],'Oman':['OM',21,57,'Asia'],'Vanuatu':['VU',-16,167,'Oceania'],
+  'Laos':['LA',18,105,'Asia'],'Myanmar':['MM',22,98,'Asia'],'North Korea':['KP',40,127,'Asia'],
+  'South Korea':['KR',37,127.5,'Asia'],'Mongolia':['MN',46,105,'Asia'],'Bangladesh':['BD',24,90,'Asia'],
+  'Bhutan':['BT',27.5,90.5,'Asia'],'Nepal':['NP',28,84,'Asia'],'Pakistan':['PK',30,70,'Asia'],
+  'Afghanistan':['AF',33,65,'Asia'],'Tajikistan':['TJ',39,71,'Asia'],'Kyrgyzstan':['KG',41,75,'Asia'],
+  'Turkmenistan':['TM',40,60,'Asia'],'Iran':['IR',32,53,'Asia'],'Syria':['SY',35,38,'Asia'],
+  'Armenia':['AM',40,45,'Asia'],'Belarus':['BY',53,28,'Europe'],'Ukraine':['UA',49,32,'Europe'],
+  'Moldova':['MD',47,29,'Europe'],'Romania':['RO',46,25,'Europe'],'Lithuania':['LT',56,24,'Europe'],
+  'Latvia':['LV',57,25,'Europe'],'Estonia':['EE',59,26,'Europe'],'Bulgaria':['BG',43,25,'Europe'],
+  'Albania':['AL',41,20,'Europe'],'Luxembourg':['LU',49.8,6.2,'Europe'],
+  'New Caledonia':['NC',-21.5,165.5,'Oceania'],'Solomon Islands':['SB',-8,159,'Oceania'],
+  'Sri Lanka':['LK',7,81,'Asia'],'Taiwan':['TW',23.5,121,'Asia'],'Azerbaijan':['AZ',40.5,47.5,'Asia'],
+  'Georgia':['GE',42,43.5,'Asia'],'Philippines':['PH',13,122,'Asia'],'Malaysia':['MY',2.5,112.5,'Asia'],
+  'Brunei':['BN',4.5,114.7,'Asia'],'Slovenia':['SI',46.1,14.8,'Europe'],'Slovakia':['SK',48.7,19.5,'Europe'],
+  'Eritrea':['ER',15,39,'Africa'],'Yemen':['YE',15,48,'Asia'],'Saudi Arabia':['SA',25,45,'Asia'],
+  'Antarctica':['AQ',-90,0,'Antarctica'],'Cyprus':['CY',35,33,'Europe'],'Northern Cyprus':['CY',35,33,'Europe'],
+  'Libya':['LY',25,17,'Africa'],'Ethiopia':['ET',8,38,'Africa'],'Djibouti':['DJ',11.5,43,'Africa'],
+  'Somaliland':['SO',10,49,'Africa'],'Uganda':['UG',1,32,'Africa'],'Rwanda':['RW',-2,30,'Africa'],
+  'Bosnia and Herzegovina':['BA',44,18,'Europe'],'North Macedonia':['MK',41.8,22,'Europe'],
+  'Serbia':['RS',44,21,'Europe'],'Montenegro':['ME',42.5,19.3,'Europe'],'Kosovo':['XK',42.7,21.2,'Europe'],
+  'Trinidad and Tobago':['TT',11,-61,'North America'],'South Sudan':['SS',7,30,'Africa']
 };
 const GAZ_C = {}; Object.entries(_C).forEach(([k,v]) => GAZ_C[k] = { iso:v[0], lat:v[1], lng:v[2], cont:v[3] });
 const _P = {
