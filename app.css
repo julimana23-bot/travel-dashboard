@@ -372,3 +372,13 @@ body.map-fs-open{overflow:hidden}
     padding:5px 12px;border-radius:20px;pointer-events:none;backdrop-filter:blur(4px);
   }
 }
+/* Snackbar */
+.toast{position:fixed;left:50%;bottom:24px;z-index:600;display:flex;align-items:center;gap:10px;max-width:calc(100vw - 32px);padding:10px 12px 10px 14px;background:#1c1c1f;border:1px solid rgba(167,139,250,.35);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.5);color:#e4e4e7;font-size:.85rem;opacity:0;transform:translate(-50%,16px);pointer-events:none;transition:opacity .25s,transform .25s}
+.toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.toast-ico{display:flex;align-items:center;justify-content:center;width:22px;height:22px;flex-shrink:0;border-radius:50%;background:rgba(74,222,128,.15);color:#4ade80;font-size:.75rem;font-weight:700}
+.toast-msg{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.toast-act{background:none;border:none;color:var(--accent);font-weight:600;font-size:.85rem;cursor:pointer;padding:4px 6px;border-radius:6px;font-family:inherit}
+.toast-act:hover{background:var(--accent-soft)}
+@media(max-width:768px){.toast{bottom:calc(76px + env(safe-area-inset-bottom))}.toast-msg{white-space:normal}}
+.trip-card.just-saved{animation:justSaved 2.2s ease}
+@keyframes justSaved{0%,40%{box-shadow:0 0 0 2px #a78bfa,0 0 24px rgba(167,139,250,.35)}100%{box-shadow:0 0 0 0 transparent}}

@@ -1143,6 +1143,33 @@ function openFlyout(id) {
   document.body.style.overflow = 'hidden';
   tfPanel.scrollTop = 0;
 }
+// ---- SNACKBAR ----
+// Bottom toast with an optional action ("View"). One at a time; a new one replaces the old.
+let toastTimer;
+function showToast(msg, action) {
+  let el = document.getElementById('toast');
+  if (!el) { el = document.createElement('div'); el.id = 'toast'; el.className = 'toast'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
+  el.innerHTML = `<span class="toast-ico">✓</span><span class="toast-msg"></span>${action ? '<button type="button" class="toast-act"></button>' : ''}`;
+  el.querySelector('.toast-msg').textContent = msg;
+  if (action) {
+    const b = el.querySelector('.toast-act');
+    b.textContent = action.label;
+    b.onclick = () => { el.classList.remove('show'); action.run(); };
+  }
+  requestAnimationFrame(() => el.classList.add('show'));
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 5000);
+}
+// Land on the logbook with the trip's card in view and briefly highlighted
+function showSavedTrip(id, msg) {
+  switchTab('trips');
+  const card = document.querySelector(`#tripsGrid .trip-card[data-trip="${CSS.escape(id)}"]`);
+  if (card && card.offsetParent) {
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    card.classList.remove('just-saved'); void card.offsetWidth; card.classList.add('just-saved');
+  }
+  showToast(msg, { label: 'View', run: () => openFlyout(id) });
+}
 function closeFlyout() {
   tripFlyout.classList.remove('open');
   tripFlyout.setAttribute('aria-hidden', 'true');
@@ -1762,9 +1789,9 @@ function commitImport() {
     trips.push(t); firstId = firstId || t.id;
   });
   saveTrips(); refreshAll();
-  switchTab('trips');
-  if (firstId) openFlyout(firstId);
   renderAddEmpty();
+  if (firstId) showSavedTrip(firstId, picked.length === 1 ? 'Trip imported' : `${picked.length} trips imported`);
+  else switchTab('trips');
 }
 
 function renderManual(editTrip) {
@@ -1900,7 +1927,8 @@ function renderManual(editTrip) {
     if (ed) trips[trips.findIndex(x => x.id === ed.id)] = t;
     else trips.push(t);
     saveTrips(); refreshAll();
-    switchTab('trips'); openFlyout(t.id); renderAddEmpty();
+    renderAddEmpty();
+    showSavedTrip(t.id, ed ? `Changes to “${t.name}” saved` : `“${t.name}” added to your logbook`);
   });
 }
 
