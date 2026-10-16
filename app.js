@@ -5,7 +5,8 @@ let currentRegion = 'all';
 // ---- TRIP DATA — single source of truth ----
 // Cards, map markers, totals and tooltips are all rendered from this array: adding a trip
 // here is the only edit needed. `dist` is the one-way flight distance from Buenos Aires (km),
-// `stats` is the trio shown on the card ('$days' is filled in from `days` so it can't drift),
+// `stats` is the trio shown on the card ('$days' is filled in from `days` so it can't drift; a 'km' stat always shows the
+// round trip from home, the same number the total km adds up),
 // `cities` are the map markers (a city visited twice still gets one marker).
 const SEED_TRIPS = [
   {
@@ -363,9 +364,15 @@ const ROUND_TRIP = 2;      // every trip is a there-and-back flight
 const CRUISE_KMH = 800;    // average incl. climb/descent — for the flight-hours estimate
 const COUNTRY_GOAL = 195, CONTINENT_GOAL = 7;
 
+// A trip that hasn't started yet is "upcoming": it shows in the logbook and on the map,
+// but countries, km, days and spend only count once it's under way.
+const todayISO = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
+const isUpcoming = t => !!t.date && !t.date.startsWith('2099') && t.date > todayISO();
+const doneTrips = () => trips.filter(t => !isUpcoming(t));
+
 // ---- DERIVED TOTALS ----
 function totals(mode) {
-  const ts = mode === 'girlfriend' ? trips.filter(t => t.mode === 'girlfriend') : trips;
+  const ts = doneTrips().filter(t => mode !== 'girlfriend' || t.mode === 'girlfriend');
   const cities = new Map();  // same place in two different years → one city
   ts.forEach(t => t.cities.forEach(c => cities.set(c.name, c)));
   const countries = [...new Map([...cities.values()].map(c => [c.country, c.flag]))];
@@ -428,7 +435,7 @@ function applyMode(mode) {
 
 // Spend stats on the Statistics tab — only trips with expenses logged count
 function renderSpending(mode) {
-  const scope = mode === 'girlfriend' ? trips.filter(t => t.mode === 'girlfriend') : trips;
+  const scope = doneTrips().filter(t => mode !== 'girlfriend' || t.mode === 'girlfriend');
   const ts = scope.filter(t => tripSpend(t) > 0);
   const note = document.getElementById('spendNote');
   const bar = document.getElementById('sp-bar'), key = document.getElementById('sp-key');
@@ -497,7 +504,9 @@ function renderBucket() {
 
 // ---- TRIP CARDS ----
 const tripSpend = t => (t.expenses || []).reduce((s, e) => s + (Number(e.amount) || 0), 0);
-const statValue = (t, v) =>
+const fmtKm = km => km >= 1000 ? (km / 1000).toFixed(1).replace(/\.0$/, '') + 'K' : String(Math.round(km));
+const statValue = (t, v, label) =>
+  label === 'km' ? fmtKm((t.dist || 0) * ROUND_TRIP) :   // round trip from home — what the total km adds up
   v === '$days' ? t.days :
   v === '$spend' ? (tripSpend(t) ? '$' + Math.round(tripSpend(t)).toLocaleString('en-US') : '—') :
   v;
@@ -506,9 +515,9 @@ function renderTrips() {
   const grid = document.getElementById('tripsGrid');
   if (!grid) return;
   grid.innerHTML = trips.map(t => `
-        <div class="trip-card" data-mode="${t.mode}" data-region="${t.region}" data-trip="${t.id}" data-date="${t.date}" data-days="${t.days}" data-dist="${t.dist}">
-          <div class="trip-header"><div class="trip-flag">${t.flag}</div><div class="trip-info"><h3>${t.name}${(t.stops && t.stops.length) || (t.itinerary && t.itinerary.length) || (t.expenses && t.expenses.length) ? '<span class="trip-badge" title="Full itinerary"></span>' : ''}</h3><div class="trip-date">${t.dateLabel}</div></div></div>
-          <div class="trip-stats">${t.stats.map(([v, l]) => `<div class="trip-stat"><div class="trip-stat-value">${statValue(t, v)}</div><div class="trip-stat-label">${l}</div></div>`).join('')}</div>
+        <div class="trip-card${isUpcoming(t) ? ' upcoming' : ''}" data-mode="${t.mode}" data-region="${t.region}" data-trip="${t.id}" data-date="${t.date}" data-days="${t.days}" data-dist="${t.dist}">
+          <div class="trip-header"><div class="trip-flag">${t.flag}</div><div class="trip-info"><h3>${t.name}${(t.stops && t.stops.length) || (t.itinerary && t.itinerary.length) || (t.expenses && t.expenses.length) ? '<span class="trip-badge" title="Full itinerary"></span>' : ''}</h3><div class="trip-date">${isUpcoming(t) ? '<span class="upcoming-pill">Upcoming</span>' : ''}${t.dateLabel}</div></div></div>
+          <div class="trip-stats">${t.stats.map(([v, l]) => `<div class="trip-stat"${l === 'km' ? ' title="Round trip from home"' : ''}><div class="trip-stat-value">${statValue(t, v, l)}</div><div class="trip-stat-label">${l}</div></div>`).join('')}</div>
           <div class="trip-highlights">${t.highlights.map(([icon, text]) => `<div class="highlight-item"><span class="highlight-icon">${icon}</span><span>${text}</span></div>`).join('')}</div>
         </div>`).join('');
 }
@@ -601,8 +610,10 @@ function renderMarkers() {
   mapGroup.querySelectorAll('.marker-group').forEach(n => n.remove());
   cityMarkers().forEach(loc => {
     const trip = loc.trips[0];
+    const upcoming = loc.trips.length > 0 && loc.trips.every(isUpcoming);
     const g = document.createElementNS('http://www.w3.org/2000/svg','g');
     g.classList.add('marker-group');
+    if (upcoming) g.classList.add('upcoming');
     g.setAttribute('data-gf', loc.gf ? '1' : '0');
 
     const { x, y } = project(loc.lng, loc.lat);
@@ -631,7 +642,7 @@ function renderMarkers() {
         ? `→ ${loc.trips.length} trips — click to choose`
         : '→ Click to view trip';
       const hint = trip ? `<p style="color:#a78bfa;margin-top:4px">${hintText}</p>` : '';
-      mapTooltip.innerHTML = `<h4>${loc.flag} ${loc.name}</h4><p>${loc.label || loc.country}</p>${hint}`;
+      mapTooltip.innerHTML = `<h4>${loc.flag} ${loc.name}</h4><p>${loc.label || loc.country}${upcoming ? ' · <span style="color:#fbbf24">Upcoming</span>' : ''}</p>${hint}`;
       placeInMap(mapTooltip, e);
       mapTooltip.classList.add('show');
     });
@@ -1054,7 +1065,7 @@ function renderFlyout(t) {
   const nCountries = new Set(t.cities.map(c => c.country)).size;
   const metrics = spend
     ? [[money(spend), 'Spent'], [perDay, 'Per day'], [t.days, 'Days'], [(t.stops || []).length || t.cities.length, (t.stops && t.stops.length) ? 'Stops' : 'Cities']]
-    : [[t.days, 'Days'], [t.cities.length, t.cities.length === 1 ? 'City' : 'Cities'], [nCountries, nCountries === 1 ? 'Country' : 'Countries'], [((t.dist * 2) / 1000).toFixed(1) + 'K', 'km']];
+    : [[t.days, 'Days'], [t.cities.length, t.cities.length === 1 ? 'City' : 'Cities'], [nCountries, nCountries === 1 ? 'Country' : 'Countries'], [fmtKm(t.dist * ROUND_TRIP), 'km']];
 
   let html = `
     <div class="tf-head">
@@ -1142,6 +1153,33 @@ function openFlyout(id) {
   tripFlyout.setAttribute('aria-hidden', 'false');
   document.body.style.overflow = 'hidden';
   tfPanel.scrollTop = 0;
+}
+// ---- SNACKBAR ----
+// Bottom toast with an optional action ("View"). One at a time; a new one replaces the old.
+let toastTimer;
+function showToast(msg, action) {
+  let el = document.getElementById('toast');
+  if (!el) { el = document.createElement('div'); el.id = 'toast'; el.className = 'toast'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
+  el.innerHTML = `<span class="toast-ico">✓</span><span class="toast-msg"></span>${action ? '<button type="button" class="toast-act"></button>' : ''}`;
+  el.querySelector('.toast-msg').textContent = msg;
+  if (action) {
+    const b = el.querySelector('.toast-act');
+    b.textContent = action.label;
+    b.onclick = () => { el.classList.remove('show'); action.run(); };
+  }
+  requestAnimationFrame(() => el.classList.add('show'));
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 5000);
+}
+// Land on the logbook with the trip's card in view and briefly highlighted
+function showSavedTrip(id, msg) {
+  switchTab('trips');
+  const card = document.querySelector(`#tripsGrid .trip-card[data-trip="${CSS.escape(id)}"]`);
+  if (card && card.offsetParent) {
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    card.classList.remove('just-saved'); void card.offsetWidth; card.classList.add('just-saved');
+  }
+  showToast(msg, { label: 'View', run: () => openFlyout(id) });
 }
 function closeFlyout() {
   tripFlyout.classList.remove('open');
@@ -1483,7 +1521,7 @@ function finalizeTrip(d, opts) {
   const nStops = (d.stops && d.stops.length) || cities.length;
   const stats = spend
     ? [['$days', 'Days'], [String(nStops), nStops === 1 ? 'Stop' : 'Stops'], ['$spend', 'Spent']]
-    : [['$days', 'Days'], [String(cities.length), cities.length === 1 ? 'City' : 'Cities'], [(dist * 2 / 1000).toFixed(1) + 'K', 'km']];
+    : [['$days', 'Days'], [String(cities.length), cities.length === 1 ? 'City' : 'Cities'], ['$km', 'km']];
   return {
     id: opts.editId || uniqueId(slug(opts.name) + (d.startDate ? '-' + d.startDate.slice(0, 4) : '')),
     name: opts.name, flag: flagFor(primary), mode: gf ? 'girlfriend' : 'solo', region: regionForCountry(primary),
@@ -1762,9 +1800,9 @@ function commitImport() {
     trips.push(t); firstId = firstId || t.id;
   });
   saveTrips(); refreshAll();
-  switchTab('trips');
-  if (firstId) openFlyout(firstId);
   renderAddEmpty();
+  if (firstId) showSavedTrip(firstId, picked.length === 1 ? 'Trip imported' : `${picked.length} trips imported`);
+  else switchTab('trips');
 }
 
 function renderManual(editTrip) {
@@ -1786,8 +1824,8 @@ function renderManual(editTrip) {
       <div class="form-field"><label>Main country</label><input name="country" list="countryList" placeholder="Costa Rica" value="${esc(edCountry)}" required></div>
     </div>
     <div class="form-row">
-      <div class="form-field"><label>Start date</label><input type="date" name="start" value="${ed && ed.startDate ? ed.startDate : ''}"></div>
-      <div class="form-field"><label>End date</label><input type="date" name="end" value="${ed && ed.endDate ? ed.endDate : ''}"></div>
+      <div class="form-field"><label>Start date</label><input type="date" name="start" value="${ed && ed.startDate ? ed.startDate : ''}"${ed ? '' : ' required'}></div>
+      <div class="form-field"><label>End date</label><input type="date" name="end" value="${ed && ed.endDate ? ed.endDate : ''}"${ed ? '' : ' required'}></div>
       <div class="form-field"><label>Trip type</label><select name="mode"><option value="solo"${ed && ed.mode !== 'girlfriend' ? ' selected' : ''}>Solo</option><option value="girlfriend"${ed && ed.mode === 'girlfriend' ? ' selected' : ''}>With GF</option></select></div>
     </div>
     <div class="form-sub"><h5>Stops</h5><div id="stopRows"></div><button type="button" class="mini-btn" id="addStop">＋ Add stop</button></div>
@@ -1842,6 +1880,16 @@ function renderManual(editTrip) {
   stopRows.querySelectorAll('[data-f="place"]').forEach(inp => inp.dispatchEvent(new Event('input', { bubbles: true })));
   document.getElementById('mBack').onclick = renderAddEmpty;
   document.getElementById('mCancel').onclick = renderAddEmpty;
+  // Both dates go together (older trips being edited may have none); the end can't be before the start
+  const syncDates = () => {
+    const st = form.elements.start, en = form.elements.end;
+    en.min = st.value || '';
+    if (ed) { st.required = !!en.value; en.required = !!st.value; }
+    en.setCustomValidity(st.value && en.value && en.value < st.value ? 'The end date is before the start date.' : '');
+  };
+  form.elements.start.addEventListener('input', syncDates);
+  form.elements.end.addEventListener('input', syncDates);
+  syncDates();
   form.addEventListener('submit', async e => {
     e.preventDefault();
     const f = form.elements;
@@ -1900,7 +1948,8 @@ function renderManual(editTrip) {
     if (ed) trips[trips.findIndex(x => x.id === ed.id)] = t;
     else trips.push(t);
     saveTrips(); refreshAll();
-    switchTab('trips'); openFlyout(t.id); renderAddEmpty();
+    renderAddEmpty();
+    showSavedTrip(t.id, ed ? `Changes to “${t.name}” saved` : `“${t.name}” added to your logbook`);
   });
 }
 
