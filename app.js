@@ -530,12 +530,16 @@ const SVG_TO_COUNTRY = Object.fromEntries(
 function updateMap(mode) {
   const visited = new Set(T.all.countries.map(([c]) => c));
   const gfVisited = new Set(T.girlfriend.countries.map(([c]) => c));
+  // Countries only on upcoming trips get just an outline until the trip happens
+  const ahead = new Set(trips.filter(t => isUpcoming(t) && (mode !== 'girlfriend' || t.mode === 'girlfriend'))
+    .flatMap(t => t.cities.map(c => c.country)).filter(c => !visited.has(c)));
   // Paint the map from the trip data, and dim what wasn't visited together in "With Girlfriend"
   document.querySelectorAll('.country[data-name]').forEach(p => {
     const svgName = p.getAttribute('data-name');
     const name = SVG_TO_COUNTRY[svgName] || svgName;
     const isVisited = visited.has(name);
     p.classList.toggle('visited', isVisited);
+    p.classList.toggle('upcoming', ahead.has(name));
     p.setAttribute('data-gf', gfVisited.has(name) ? '1' : '0');
     p.style.opacity = (isVisited && mode === 'girlfriend' && !gfVisited.has(name)) ? '0.3' : '1';
   });
@@ -617,21 +621,22 @@ function renderMarkers() {
     g.setAttribute('data-gf', loc.gf ? '1' : '0');
 
     const { x, y } = project(loc.lng, loc.lat);
+    g._x = x; g._y = y;
 
     const hit = document.createElementNS('http://www.w3.org/2000/svg','circle');
-    hit.setAttribute('cx', x); hit.setAttribute('cy', y); hit.setAttribute('r', '14');
+    hit.setAttribute('cx', 0); hit.setAttribute('cy', 0); hit.setAttribute('r', '14');
     hit.classList.add('marker-hit');
 
     const pulse = document.createElementNS('http://www.w3.org/2000/svg','circle');
-    pulse.setAttribute('cx', x); pulse.setAttribute('cy', y); pulse.setAttribute('r', '6');
+    pulse.setAttribute('cx', 0); pulse.setAttribute('cy', 0); pulse.setAttribute('r', '6');
     pulse.classList.add('marker-pulse');
 
     const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
-    circle.setAttribute('cx', x); circle.setAttribute('cy', y); circle.setAttribute('r', '5');
+    circle.setAttribute('cx', 0); circle.setAttribute('cy', 0); circle.setAttribute('r', '5');
     circle.classList.add('marker-circle');
 
     const label = document.createElementNS('http://www.w3.org/2000/svg','text');
-    label.setAttribute('x', x); label.setAttribute('y', y - 9);
+    label.setAttribute('x', 0); label.setAttribute('y', -9);
     label.classList.add('marker-label');
     label.textContent = loc.flag;
 
@@ -655,8 +660,8 @@ function renderMarkers() {
     });
     mapGroup.appendChild(g);
   });
+  scaleMarkers();
 }
-renderMarkers();
 
 // ---- ZOOM/PAN ----
 // Visible map window in user units (matches the SVG viewBox "0 110 2000 720")
@@ -689,13 +694,19 @@ function clientToVB(clientX, clientY) {
   return mapCTMInv ? pt.matrixTransform(mapCTMInv) : { x: clientX, y: clientY };
 }
 
-function applyTransform(animate) {
+// Pins and flags keep (almost) their screen size as you zoom — they grow just a little so
+// zooming still reads as "getting closer", instead of ballooning 6× and hiding the map.
+function scaleMarkers() {
+  const k = Math.pow(zoom, -0.8);
+  mapGroup.querySelectorAll('.marker-group').forEach(g => g.setAttribute('transform', `translate(${g._x},${g._y}) scale(${k})`));
+}
+function applyTransform() {
   closePicker(); // the picker is anchored to a screen point, not to the map
   // Keep the content (0..fullW / 0..fullH) covering the actually-visible window
   panX = clamp(panX, visW.x + visW.w - VB.fullW * zoom, visW.x);
   panY = clamp(panY, visW.y + visW.h - VB.fullH * zoom, visW.y);
-  mapGroup.style.transition = animate ? 'transform .24s cubic-bezier(.22,1,.36,1)' : 'none';
   mapGroup.setAttribute('transform', `translate(${panX},${panY}) scale(${zoom})`);
+  scaleMarkers();
   // Embedded + zoom 1: let a swipe scroll the page. Zoomed in or full-screen: capture the gesture.
   if (mapContainer) mapContainer.style.touchAction = (mapIsFs() || zoom > 1) ? 'none' : 'pan-y';
 }
@@ -726,24 +737,59 @@ function startFling() {
   flingId = requestAnimationFrame(step);
 }
 
-// Zoom toward a fixed point U (in SVG user coords) so it stays under the cursor
+// Zoom toward a fixed point U (in SVG user coords) so it stays under the cursor.
+// Instant for gestures that already track the fingers (pinch); otherwise it glides: every
+// wheel notch / button / double-click moves a target and each frame eases toward it, so quick
+// successive inputs stack into one smooth motion instead of a series of jumps.
+let zoomAnim = 0, zTarget = 1, zAnchor = null;
+function cancelZoomAnim() { if (zoomAnim) cancelAnimationFrame(zoomAnim); zoomAnim = 0; zTarget = zoom; }
+function setZoomAround(z, U) {
+  panX = U.x - (U.x - panX) / zoom * z;
+  panY = U.y - (U.y - panY) / zoom * z;
+  zoom = z;
+}
 function zoomTo(newZoom, U, animate) {
-  newZoom = clamp(newZoom, MIN_ZOOM, MAX_ZOOM);
-  if (newZoom === zoom) return;
   cancelFling();
-  panX = U.x - (U.x - panX) / zoom * newZoom;
-  panY = U.y - (U.y - panY) / zoom * newZoom;
-  zoom = newZoom;
-  applyTransform(animate);
+  newZoom = clamp(newZoom, MIN_ZOOM, MAX_ZOOM);
+  if (!animate) { cancelZoomAnim(); if (newZoom !== zoom) { setZoomAround(newZoom, U); applyTransform(); } zTarget = zoom; return; }
+  zTarget = newZoom; zAnchor = U;
+  if (zoomAnim) return;
+  let prev = performance.now();
+  const step = now => {
+    const dt = Math.min(now - prev, 48); prev = now;
+    const k = 1 - Math.pow(1 - 0.2, dt / 16);           // ~20% of the remaining distance per frame
+    // Ease in log space so zooming in and out feel equally fast
+    const lz = Math.log(zoom) + (Math.log(zTarget) - Math.log(zoom)) * k;
+    const done = Math.abs(Math.log(zTarget) - lz) < 0.002;
+    setZoomAround(done ? zTarget : Math.exp(lz), zAnchor);
+    applyTransform();
+    zoomAnim = done ? 0 : requestAnimationFrame(step);
+  };
+  zoomAnim = requestAnimationFrame(step);
+}
+// Glide back to the whole world
+function resetView() {
+  cancelFling(); cancelZoomAnim();
+  const z0 = zoom, x0 = panX, y0 = panY, t0 = performance.now(), D = 420;
+  const ease = t => 1 - Math.pow(1 - t, 3);
+  const step = now => {
+    const t = Math.min((now - t0) / D, 1), e = ease(t);
+    zoom = Math.exp(Math.log(z0) * (1 - e)); panX = x0 * (1 - e); panY = y0 * (1 - e);
+    applyTransform();
+    zoomAnim = t < 1 ? requestAnimationFrame(step) : 0;
+    if (t >= 1) zTarget = zoom;
+  };
+  zoomAnim = requestAnimationFrame(step);
 }
 
-const center = () => ({ x: VB.x + VB.w / 2, y: VB.y + VB.h / 2 });
+const center = () => ({ x: visW.x + visW.w / 2, y: visW.y + visW.h / 2 });
 
-document.getElementById('zoomIn')?.addEventListener('click', () => zoomTo(zoom * 1.5, center(), true));
-document.getElementById('zoomOut')?.addEventListener('click', () => zoomTo(zoom / 1.5, center(), true));
-document.getElementById('resetZoom')?.addEventListener('click', () => { cancelFling(); zoom = 1; panX = 0; panY = 0; applyTransform(true); });
+document.getElementById('zoomIn')?.addEventListener('click', () => zoomTo(zTarget * 1.6, center(), true));
+document.getElementById('zoomOut')?.addEventListener('click', () => zoomTo(zTarget / 1.6, center(), true));
+document.getElementById('resetZoom')?.addEventListener('click', resetView);
 addEventListener('resize', () => { cancelFling(); refreshMapCTM(); applyTransform(); });
 refreshMapCTM();   // prime the screen mapping once at startup
+renderMarkers();
 
 // ---- MAP FULLSCREEN ----
 const mapFsBtn = document.getElementById('mapFsBtn');
@@ -754,8 +800,8 @@ function toggleMapFs(force) {
   mapContainer.classList.toggle('map-fs', on);
   document.body.classList.toggle('map-fs-open', on);
   if (mapFsBtn) mapFsBtn.innerHTML = on ? FS_CLOSE : FS_EXPAND;
-  cancelFling();
-  zoom = 1; panX = 0; panY = 0;
+  cancelFling(); cancelZoomAnim();
+  zoom = zTarget = 1; panX = 0; panY = 0;
   // container size changed → recompute the screen mapping once layout settles, then re-fit
   requestAnimationFrame(() => { refreshMapCTM(); applyTransform(); });
 }
@@ -798,19 +844,30 @@ function openAddTripForCountry(country) {
   if (cf) { cf.value = country; cf.dispatchEvent(new Event('input', { bubbles: true })); }
   if (nf && !nf.value.trim()) nf.value = country;
 }
+let countryClickTimer = 0;
 const onPhone = () => matchMedia('(max-width:768px)').matches;
 mapContainer?.addEventListener('click', e => {
   if (mapDragged || e.target.closest('.zoom-controls') || e.target.closest('.map-fs-btn') || e.target.closest('#tripPicker')) return;
   // Phone: the embedded map is a preview — a tap opens it full-screen (markers still open the trip)
   if (onPhone() && !mapIsFs()) { if (!e.target.closest('.marker-group')) toggleMapFs(true); return; }
   if (e.target.closest('.marker-group')) return;
-  openAddTripForCountry(countryAtEvent(e));
+  // Wait a beat: a second click means double-click-to-zoom, not "add a trip here"
+  const country = countryAtEvent(e);
+  clearTimeout(countryClickTimer);
+  if (country && e.target.classList.contains('upcoming')) {   // outlined country → open its upcoming trip
+    const t = trips.find(t => isUpcoming(t) && t.cities.some(c => c.country === country));
+    if (t && e.detail < 2) countryClickTimer = setTimeout(() => goToTrip(t.id), 260);
+    return;
+  }
+  if (country && e.detail < 2) countryClickTimer = setTimeout(() => openAddTripForCountry(country), 260);
 });
 mapGroup?.addEventListener('mouseover', e => {
   if (isPanning) return;
   const c = countryAtEvent(e);
   if (!c) return;
-  mapTooltip.innerHTML = `<h4>＋ Add a trip</h4><p>${flagFor(c)} ${c}</p>`;
+  mapTooltip.innerHTML = e.target.classList.contains('upcoming')
+    ? `<h4>${flagFor(c)} ${c}</h4><p style="color:#fbbf24">Upcoming trip</p>`
+    : `<h4>＋ Add a trip</h4><p>${flagFor(c)} ${c}</p>`;
   placeInMap(mapTooltip, e);
   mapTooltip.classList.add('show');
 });
@@ -820,7 +877,7 @@ mapGroup?.addEventListener('mouseout', e => {
 
 mapContainer?.addEventListener('mousedown', e => {
   if (e.target.closest('.zoom-controls') || e.target.closest('.map-fs-btn') || e.target.closest('#tripPicker')) return;
-  cancelFling();
+  cancelFling(); cancelZoomAnim();
   refreshMapCTM();
   isPanning = true;
   mapDragged = false;
@@ -843,23 +900,48 @@ mapContainer?.addEventListener('mousemove', e => {
   isPanning = false; mapContainer.classList.remove('grabbing');
 }));
 mapContainer?.addEventListener('wheel', e => {
-  if (e.ctrlKey) {
-    // Pinch-to-zoom (trackpad) or ctrl + wheel — zoom toward the cursor
+  if (e.ctrlKey || e.metaKey) {
+    // Trackpad pinch (arrives as ctrl + wheel) or ctrl/⌘ + mouse wheel — zoom toward the cursor,
+    // proportional to how far the wheel/pinch moved
     e.preventDefault();
-    zoomTo(zoom * (e.deltaY < 0 ? 1.08 : 1 / 1.08), clientToVB(e.clientX, e.clientY));
+    const dy = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaY;          // lines → px
+    const f = Math.exp(-clamp(dy, -100, 100) * (e.ctrlKey && Math.abs(dy) < 40 ? 0.012 : 0.004));
+    zoomTo(zTarget * f, clientToVB(e.clientX, e.clientY), true);
     return;
   }
-  // Embedded at default zoom: let the wheel scroll the page. Full-screen always pans.
-  if (zoom <= 1 && !mapIsFs()) return;
+  // Embedded at default zoom: let the wheel scroll the page (and say how to zoom). Full-screen always pans.
+  if (zoom <= 1 && !mapIsFs()) { showZoomHint(); return; }
   // Zoomed in: two-finger scroll / mouse wheel pans the map (px delta → user units)
   e.preventDefault();
-  cancelFling();
+  cancelFling(); cancelZoomAnim();
   if (!mapCTMInv) refreshMapCTM();
   const perPx = mapCTMInv ? mapCTMInv.a : 1;
   panX -= e.deltaX * perPx;
   panY -= e.deltaY * perPx;
   applyTransform();
 }, { passive: false });
+
+// Double-click zooms in on that spot (shift + double-click zooms out)
+mapContainer?.addEventListener('dblclick', e => {
+  if (e.target.closest('.zoom-controls') || e.target.closest('.map-fs-btn') || e.target.closest('.marker-group')) return;
+  e.preventDefault();
+  clearTimeout(countryClickTimer);
+  zoomTo(zTarget * (e.shiftKey ? 1 / 2 : 2), clientToVB(e.clientX, e.clientY), true);
+});
+// "Ctrl + scroll to zoom" — shown briefly when a plain scroll passes over the embedded map
+let zoomHintTimer = 0;
+function showZoomHint() {
+  if (!mapContainer || matchMedia('(hover: none)').matches) return;
+  let h = mapContainer.querySelector('.map-zoom-hint');
+  if (!h) {
+    h = document.createElement('div'); h.className = 'map-zoom-hint';
+    h.textContent = /Mac|iPhone|iPad/.test(navigator.platform) ? 'Pinch or ⌘ + scroll to zoom · double-click to zoom in' : 'Ctrl + scroll to zoom · double-click to zoom in';
+    mapContainer.appendChild(h);
+  }
+  h.classList.add('show');
+  clearTimeout(zoomHintTimer);
+  zoomHintTimer = setTimeout(() => h.classList.remove('show'), 1400);
+}
 
 // ---- MAP TOUCH — one finger pans, two fingers pinch-zoom ----
 let pinchDist = 0, pinchMid = null;
@@ -869,7 +951,7 @@ const tMid = t => ({ x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[
 mapContainer?.addEventListener('touchstart', e => {
   if (e.target.closest('.zoom-controls') || e.target.closest('.map-fs-btn') || e.target.closest('#tripPicker')) return;
   const t = e.touches;
-  cancelFling();
+  cancelFling(); cancelZoomAnim();
   refreshMapCTM();
   mapDragged = false;
   if (t.length === 1) {
