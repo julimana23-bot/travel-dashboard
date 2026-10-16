@@ -382,3 +382,7 @@ body.map-fs-open{overflow:hidden}
 @media(max-width:768px){.toast{bottom:calc(76px + env(safe-area-inset-bottom))}.toast-msg{white-space:normal}}
 .trip-card.just-saved{animation:justSaved 2.2s ease}
 @keyframes justSaved{0%,40%{box-shadow:0 0 0 2px #a78bfa,0 0 24px rgba(167,139,250,.35)}100%{box-shadow:0 0 0 0 transparent}}
+/* Upcoming trips: in the logbook and on the map, but not counted yet */
+.upcoming-pill{display:inline-block;margin-right:6px;padding:1px 7px;border-radius:999px;background:rgba(251,191,36,.12);color:#fbbf24;font-size:.68rem;font-weight:600;letter-spacing:.02em;vertical-align:1px}
+.marker-group.upcoming .marker-circle{fill:#18181b;stroke:#fbbf24;stroke-width:1.6;stroke-dasharray:2.5 1.8}
+.marker-group.upcoming .marker-pulse{display:none}
