@@ -1258,10 +1258,30 @@ const p2 = n => String(n).padStart(2, '0');
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 const slug = s => norm(s).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'trip';
 function uniqueId(base) { let id = base, n = 2; while (trips.some(t => t.id === id)) id = base + '-' + n++; return id; }
+// A place the gazetteer doesn't know ("Silicon Valley") is looked up on OpenStreetMap,
+// so its pin lands on the place instead of the middle of the country. Resolves null offline.
+async function geocodeOnline(place, country) {
+  const iso = (GAZ_C[country] || {}).iso;
+  const q = new URLSearchParams({ q: place, format: 'json', limit: '1' });
+  if (iso) q.set('countrycodes', iso.toLowerCase());
+  try {
+    const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 6000);
+    const r = await fetch('https://nominatim.openstreetmap.org/search?' + q, { signal: ctl.signal, headers: { 'Accept-Language': 'en' } });
+    clearTimeout(to);
+    const [hit] = r.ok ? await r.json() : [];
+    if (!hit) return null;
+    const lat = +hit.lat, lng = +hit.lon;
+    GAZ_P[norm(place)] = { country, lat, lng };   // remember it for the rest of the session
+    return [lat, lng];
+  } catch (e) { return null; }
+}
 function flagFor(country) { const iso = (GAZ_C[country] || {}).iso; return iso ? iso.replace(/./g, c => String.fromCodePoint(0x1F1E6 - 65 + c.charCodeAt(0))) : '🌍'; }
 // Learn every place already logged (name -> country + coords) so future imports resolve on their own.
 // Also index each half of a combined name ("Jujuy / Purmamarca" -> "jujuy", "purmamarca").
+// A city parked on its country's centre was never really located — don't learn it, so re-saving looks it up.
+const onCountryCentre = c => { const g = GAZ_C[c.country]; return !!g && norm(c.name) !== norm(c.country) && c.lat === g.lat && c.lng === g.lng; };
 trips.forEach(t => (t.cities || []).forEach(c => {
+  if (onCountryCentre(c)) return;
   [c.name, ...String(c.name).split(/\s*[/&+]\s*| y | e /i)].forEach(nm => {
     const k = norm(nm);
     if (k && !GAZ_P[k]) GAZ_P[k] = { country: c.country, lat: c.lat, lng: c.lng };
@@ -1821,9 +1841,8 @@ function renderManual(editTrip) {
   });
   stopRows.querySelectorAll('[data-f="place"]').forEach(inp => inp.dispatchEvent(new Event('input', { bubbles: true })));
   document.getElementById('mBack').onclick = renderAddEmpty;
-  document.getElementById('mBack').onclick = renderAddEmpty;
   document.getElementById('mCancel').onclick = renderAddEmpty;
-  form.addEventListener('submit', e => {
+  form.addEventListener('submit', async e => {
     e.preventDefault();
     const f = form.elements;
     const country = f.country.value.trim();
@@ -1860,8 +1879,20 @@ function renderManual(editTrip) {
     d.days = (d.startDate && d.endDate) ? Math.round((new Date(d.endDate) - new Date(d.startDate)) / 864e5) + 1
       : (d.itinerary.length || d.stops.reduce((a, s) => a + (s.nights || 0), 0) || (ed && ed.days) || 1);
     const pc = {}; d.places.forEach(p => pc[p] = country);
+    // Places the gazetteer doesn't know: look them up online (one at a time — OSM asks for ≤1 req/s)
+    const coords = {};
+    const unknown = d.places.filter(p => !GAZ_P[norm(p)] && norm(p) !== norm(country));
+    if (unknown.length) {
+      const btn = form.querySelector('[type="submit"]');
+      btn.disabled = true; btn.textContent = 'Locating…';
+      for (const [i, p] of unknown.entries()) {
+        if (i) await new Promise(r => setTimeout(r, 1100));
+        const c = await geocodeOnline(p, country);
+        if (c) coords[p] = c;
+      }
+    }
     const t = finalizeTrip(d, {
-      placeCountry: pc, name: d.name, mode: f.mode.value,
+      placeCountry: pc, name: d.name, mode: f.mode.value, coords,
       editId: ed ? ed.id : null,
       existingCities: ed ? ed.cities : null,   // keep real city names/coords if stops weren't re-entered
       highlights: ed ? ed.highlights : null    // keep the card's hand-written highlights
