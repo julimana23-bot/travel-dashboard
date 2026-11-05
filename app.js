@@ -78,6 +78,14 @@ const SEED_TRIPS = [
     notes:'Excursions (volcano tour, night tour, chocolate, coffee, hanging bridges) still to be priced and booked.'
   },
   {
+    id:'florianopolis-2026', name:'Florianópolis', flag:'🇧🇷', mode:'solo', region:'america',
+    date:'2026-10-31', dateLabel:'31 Oct – 4 Nov, 2026 · With friends', days:5, dist:1217,
+    startDate:'2026-10-31', endDate:'2026-11-04',
+    stats:[['$days','Days'],['1','City'],['$km','km']],
+    highlights:[['👫','Trip with friends']],
+    cities:[{name:'Florianópolis',country:'Brazil',lat:-27.6,lng:-48.55,flag:'🇧🇷'}]
+  },
+  {
     id:'southafrica', name:'South Africa', flag:'🇿🇦', mode:'girlfriend', region:'africa',
     date:'2024-01-13', dateLabel:'13–29 Jan, 2024 · With GF 💕', days:16, dist:6869,
     stats:[['$days','Days'],['5','Cities'],['2.3K','km']],
